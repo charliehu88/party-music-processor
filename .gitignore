@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Media
+input_mp3s/*
+output_mp4s/*
+*.mp3
+*.mp4
+*.wav
+*.png
