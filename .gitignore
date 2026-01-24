@@ -15,3 +15,5 @@ output_mp4s/*
 *.mp4
 *.wav
 *.png
+*.jpg
+*.log

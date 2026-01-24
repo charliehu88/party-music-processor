@@ -1,0 +1,83 @@
+
+========================================
+📊 FINAL STATISTICS (50 songs)
+   ⏱️  Total Duration: 2h 25m 40s
+------------------------------------
+   Standard: 19 | Latin: 31
+   Slow: 28 | Quick: 22
+========================================
+DANCE TYPE           | COUNT | %    
+------------------------------------
+Rumba                | 6     | 12.0%
+Chacha               | 6     | 12.0%
+Waltz                | 6     | 12.0%
+Tango                | 5     | 10.0%
+Samba                | 3     | 6.0%
+Viennese Waltz       | 3     | 6.0%
+Foxtrot              | 3     | 6.0%
+Bachata              | 3     | 6.0%
+Hustle               | 2     | 4.0%
+Quickstep            | 2     | 4.0%
+Merengue             | 2     | 4.0%
+Jive                 | 2     | 4.0%
+Salsa                | 2     | 4.0%
+Paso Doble           | 2     | 4.0%
+Bolero               | 1     | 2.0%
+West Coast Swing     | 1     | 2.0%
+Country Two Step     | 1     | 2.0%
+========================================
+
+===========================================================
+📝 PLAYLIST ORDER
+============================================================
+01. [Rumba] Rumba- Dance with Me
+02. [Chacha] Chacha- Sway
+03. [Waltz] Waltz-Schindler's List
+04. [Viennese Waltz] Viennese Waltz- Chang-An
+05. [Tango] Tango- Para Él Y Para Ella
+06. [Samba] Samba- Surun pyyhit silmistäni Diandra ja Mikael Konttinen
+07. [Bachata] Bachata- omeo Santos - Eres mia
+08. [Chacha] Chacha- Saxophone
+09. [Waltz] Waltz- 黄玫瑰
+10. [Salsa] Salsa- a Excelencia - Salsa Na'Ma
+11. [Rumba] Rumba- Bésame Mucho
+12. [Viennese Waltz] Viennese Waltz- Whitney Houston I Have Nothing
+13. [Rumba] Rumba- Historia de un Amor Violin
+14. [Chacha] Chacha- Katchi  Ofenbach
+15. [Foxtrot] Foxtrot- Theme of Pink Panther
+16. [Quickstep] Quickstep- When I'm With You
+17. [Bachata] Bachata- La Bachata Dance
+18. [Hustle] Hustle- Mesmerized
+19. [Tango] Tango- New Rules
+20. [Rumba] Rumba- Whispers of Havana
+21. [Waltz] Waltz- Peace of Mind
+22. [Merengue] merengue- Elvis Crespo - Tu Sonrisa
+23. [Tango] TANGO- Amado Tango
+24. [Jive] Jive- Crazy Little Thing Called Love
+25. [Paso Doble] Paso Doble- Music
+26. [Chacha] Chacha-Kissing in the Rain
+27. [Foxtrot] Foxtrot- Salut Joe Dassin
+28. [Samba] Samba- ANNIE LEUNG Like Smug Clou
+29. [Rumba] Rumba or Bolero- In your arms again
+30. [Salsa] Salsa- Scuola Di Salsa
+31. [Waltz] Waltz-Kanashiki Kako
+32. [Viennese Waltz] Viennese Waltz- Shoskakovich 2nd
+33. [Bachata] Bachata- Romantic Latin Songs
+34. [Waltz] Waltz- 天际
+35. [Tango] TANGO- Amado Tango
+36. [Quickstep] QUICKSTEP- Crazy Stupid Love
+37. [Country Two Step] Country two step- Conway Twitty
+38. [Chacha] Chacha- Dancing Through the Night
+39. [Bolero] Bolero- Michael Bubl Help Me Make
+40. [Merengue] merengue- LA ESENCIA DEL AMOR
+41. [West Coast Swing] West Coast Swing- Jive Music 08
+42. [Samba] Samba- ANNIE LEUNG Like Smug Clou
+43. [Paso Doble] Paso Doble- Music
+44. [Jive] Jive or Swing- Crazy Little Thing
+45. [Hustle] Hustle- Party All the Time
+46. [Chacha] Chacha- Charanga
+47. [Tango] Tango- New Rules
+48. [Rumba] Rumba- Historia de un Amor Song
+49. [Foxtrot] Foxtrot- Careless Whisper
+50. [Waltz] Waltz- Valentine's Secret
+============================================================

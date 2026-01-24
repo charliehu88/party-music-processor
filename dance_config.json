@@ -1,0 +1,24 @@
+{
+    "weights": {
+        "Waltz": 10,
+        "Foxtrot": 5,
+        "Tango": 8,
+        "Viennese Waltz": 5,
+        "Quickstep": 3,
+
+        "Rumba": 10,
+        "ChaCha": 10,
+        "Samba": 6,
+        "Jive": 3,
+        "Paso Doble": 3,
+
+        "Hustle": 4,
+        "Salsa": 4,
+        "Bachata": 5,
+        "Merengue": 3,
+        "West Coast Swing": 2,
+        "Swing": 4,
+        "Bolero": 2,
+        "Country Two Step": 2
+    }
+}
