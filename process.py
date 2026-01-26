@@ -188,6 +188,30 @@ def interactive_swap(playlist):
         else:
              print("\n❌ Invalid command.")
 
+# --- SILENCE STRIPPER ---
+def strip_trailing_silence(audio_segment, silence_threshold=-45.0, chunk_size=50):
+    """
+    Scans audio from end to start. Returns audio trimmed to the last sound event.
+    Threshold lowered to -45dB (Safer for dynamic songs).
+    Requires audio to be NORMALIZED first.
+    """
+    reversed_audio = audio_segment.reverse()
+    
+    trim_ms = 0
+    for i in range(0, len(reversed_audio), chunk_size):
+        chunk = reversed_audio[i:i+chunk_size]
+        if chunk.dBFS > silence_threshold:
+            trim_ms = i
+            break
+            
+    if trim_ms > 0:
+        # Keep 500ms buffer
+        keep_len = len(audio_segment) - trim_ms + 500
+        keep_len = min(keep_len, len(audio_segment))
+        return audio_segment[:keep_len]
+        
+    return audio_segment
+
 def main():
     args = parse_args()
     print(f"Loading rules from: {args.config}")
@@ -245,7 +269,6 @@ def main():
 
     # --- 4. ARRANGE ---
     master_playlist = arrange_abundance_aware(drafted_songs)
-    
     if reserved_last:
         master_playlist.append(reserved_last)
 
@@ -264,13 +287,11 @@ def main():
             dtype = get_dance_type(song)
             stats[dtype] = stats.get(dtype, 0) + 1
             
-            # Count Types
             if any(d.lower() == dtype.lower() for d in STANDARD_DANCES):
                 style_counts['Standard'] += 1
             else:
                 style_counts['Latin'] += 1
                 
-            # Count Time
             if any(d.lower() == dtype.lower() for d in SLOW_DANCES):
                 speed_counts['Slow'] += 1
                 total_seconds += (args.length_slow + args.silence)
@@ -278,15 +299,14 @@ def main():
                 speed_counts['Quick'] += 1
                 total_seconds += (args.length_quick + args.silence)
             
-        # Format Time
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
         seconds = total_seconds % 60
-        time_str = f"{hours}h {minutes}m {seconds}s"
+        time_str = f"{hours}h {minutes}m {seconds}s (approx)"
             
         print("\n" + "="*40)
         print(f"📊 FINAL STATISTICS ({total} songs)")
-        print(f"   ⏱️  Total Duration: {time_str}")
+        print(f"   ⏱️  Max Duration: {time_str}")
         print("-" * 36)
         print(f"   Standard: {style_counts['Standard']} | Latin: {style_counts['Latin']}")
         print(f"   Slow: {speed_counts['Slow']} | Quick: {speed_counts['Quick']}")
@@ -341,13 +361,27 @@ def main():
         input_mp3_path = os.path.join(source_dir, mp3_filename)
         temp_wav_path = os.path.join(output_dir, f"temp_{index}.wav")
         
+        # 1. Load Audio
         audio = AudioSegment.from_mp3(input_mp3_path)
+        
+        # 2. NORMALIZE FIRST (Important Fix)
+        # We maximize volume BEFORE checking for silence.
+        # This makes the quiet ending of the Paso Doble 'loud enough' to survive the cut.
         audio = effects.normalize(audio)
-        if len(audio) > settings['length_ms']: audio = audio[:settings['length_ms']]
+
+        # 3. TRIM SILENCE (Safe Threshold)
+        audio = strip_trailing_silence(audio)
+
+        # 4. Check Length Cap
+        if len(audio) > settings['length_ms']: 
+            audio = audio[:settings['length_ms']]
+            
+        # 5. Fade & Add Silence
         audio = audio.fade_out(settings['fade_ms'])
         silence = AudioSegment.silent(duration=settings['silence_ms'])
         final_audio = audio + silence
         
+        # 6. Export
         final_audio.export(temp_wav_path, format="wav")
         if export_mp3_path:
             final_audio.export(export_mp3_path, format="mp3")
