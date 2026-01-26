@@ -91,7 +91,7 @@ def calculate_global_quotas(target_count, weights, library):
     for i in range(remainder_needed):
         dtype = sorted_rem[i][0]
         quotas[dtype] += 1
-        
+
     return quotas
 
 def arrange_abundance_aware(drafted_songs):
