@@ -1,0 +1,12 @@
+# Note the format of each line:
+# <music link> | <dance type> - <music name>
+# where <music link> can be youtube link or any orther public music sites as long as the link is downloadable
+
+https://youtu.be/rzzk_OaiplM?si=4PuXjcOwN4i0At82 | Bachata- La Bachata Dance
+https://youtu.be/HpMmdEOeleY?si=8h7yJRa2433Ec1aG | Chacha- Charanga
+https://youtu.be/DI_VchthyzA?si=Zrb9ajy53vId5vsb | Foxtrot- Careless Whisper
+https://youtu.be/dcvqByiKDxo?si=bwFqCf7K7ATHww04 | Jive or Swing- Crazy Little Thing
+https://youtu.be/rnuw-pHn_nE?si=_PlMrTNLB9Uyk_F2 | Rumba- Bésame Mucho
+https://youtu.be/PeySoB4kqH0?si=XNakA2VZBz4fV-1Z | Viennese Waltz- A Donde Voy
+https://youtu.be/misyAAzuGnw?si=O2cHmDqyl21UY9AG | Waltz- Bus Stop
+https://youtu.be/1Z8js36Act8?si=ks9nyPEKPH2oi4Wv | West Coast Swing- Jive Music 08

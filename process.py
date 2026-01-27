@@ -331,17 +331,23 @@ def main():
         return {'type': 'Dance', 'name': base}
 
     def generate_dynamic_cover(current_meta, next_meta, output_img_path):
-        FONT_PATH_BOLD = "/Library/Fonts/Arial Bold.ttf"
-        FONT_PATH_REG = "/Library/Fonts/Arial.ttf"
+        # Point to your downloaded file
+        # (Make sure this filename matches exactly!)
+        FONT_PATH = "./NotoSansSC-VariableFont_wght.ttf"
+        
         W, H = 1280, 720
         img = Image.new('RGB', (W, H), color=(20, 20, 30))
         draw = ImageDraw.Draw(img)
+        
         try:
-            font_xl = ImageFont.truetype(FONT_PATH_BOLD, 80)
-            font_l = ImageFont.truetype(FONT_PATH_BOLD, 60)
-            font_m = ImageFont.truetype(FONT_PATH_REG, 40)
-            font_s = ImageFont.truetype(FONT_PATH_REG, 30)
+            # We use the same font file for all, just different sizes
+            # 80 = XL (Title), 60 = L (Song Name), 40 = M, 30 = S
+            font_xl = ImageFont.truetype(FONT_PATH, 80)
+            font_l = ImageFont.truetype(FONT_PATH, 60)
+            font_m = ImageFont.truetype(FONT_PATH, 40)
+            font_s = ImageFont.truetype(FONT_PATH, 30)
         except IOError:
+            print("⚠️ Font not found! Falling back to default.")
             font_xl = font_l = font_m = font_s = ImageFont.load_default()
         
         c_label = (180, 180, 180)
