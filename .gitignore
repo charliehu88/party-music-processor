@@ -17,3 +17,5 @@ output_mp4s/*
 *.png
 *.jpg
 *.log
+client_secrets.json
+token.json
