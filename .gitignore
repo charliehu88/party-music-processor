@@ -17,3 +17,9 @@ output_mp4s/*
 *.png
 *.jpg
 *.log
+client_secrets.json
+token.json
+chenchen-collection.txt
+nick-collections.txt
+nick_dance_config.json
+songs.txt
