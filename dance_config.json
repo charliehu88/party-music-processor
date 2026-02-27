@@ -1,24 +1,99 @@
 {
-    "weights": {
-        "Waltz": 10,
-        "Foxtrot": 5,
-        "Tango": 8,
-        "Viennese Waltz": 5,
-        "Quickstep": 3,
-
-        "Rumba": 10,
-        "ChaCha": 10,
-        "Samba": 6,
-        "Jive": 3,
-        "Paso Doble": 3,
-
-        "Hustle": 4,
-        "Salsa": 4,
-        "Bachata": 5,
-        "Merengue": 3,
-        "West Coast Swing": 2,
-        "Swing": 4,
-        "Bolero": 2,
-        "Country Two Step": 2
+  "dances": {
+    "Waltz": {
+      "ratio": 10,
+      "tempo": "slow",
+      "length": 0
+    },
+    "Foxtrot": {
+      "ratio": 5,
+      "tempo": "slow",
+      "length": 0
+    },
+    "Tango": {
+      "ratio": 8,
+      "tempo": "slow",
+      "length": 0
+    },
+    "Viennese Waltz": {
+      "ratio": 5,
+      "tempo": "quick",
+      "length": 120
+    },
+    "Quickstep": {
+      "ratio": 3,
+      "tempo": "quick",
+      "length": 150
+    },
+    "Rumba": {
+      "ratio": 10,
+      "tempo": "slow",
+      "length": 0
+    },
+    "ChaCha": {
+      "ratio": 10,
+      "tempo": "quick",
+      "length": 0
+    },
+    "Samba": {
+      "ratio": 6,
+      "tempo": "quick",
+      "length": 150
+    },
+    "Jive": {
+      "ratio": 3,
+      "tempo": "quick",
+      "length": 140
+    },
+    "Paso Doble": {
+      "ratio": 3,
+      "tempo": "quick",
+      "length": 120
+    },
+    "Hustle": {
+      "ratio": 4,
+      "tempo": "quick",
+      "length": 0
+    },
+    "Salsa": {
+      "ratio": 4,
+      "tempo": "quick",
+      "length": 0
+    },
+    "Bachata": {
+      "ratio": 5,
+      "tempo": "slow",
+      "length": 0
+    },
+    "Merengue": {
+      "ratio": 3,
+      "tempo": "quick",
+      "length": 0
+    },
+    "West Coast Swing": {
+      "ratio": 2,
+      "tempo": "slow",
+      "length": 0
+    },
+    "Swing": {
+      "ratio": 4,
+      "tempo": "quick",
+      "length": 0
+    },
+    "Bolero": {
+      "ratio": 2,
+      "tempo": "slow",
+      "length": 0
+    },
+    "Country Two Step": {
+      "ratio": 2,
+      "tempo": "quick",
+      "length": 0
+    },
+    "Nightclub Two Step": {
+      "ratio": 2,
+      "tempo": "slow",
+      "length": 0
     }
+  }
 }
