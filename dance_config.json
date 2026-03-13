@@ -1,97 +1,97 @@
 {
   "dances": {
     "Waltz": {
-      "ratio": 10,
+      "weight": 10,
       "tempo": "slow",
       "length": 0
     },
     "Foxtrot": {
-      "ratio": 5,
+      "weight": 5,
       "tempo": "slow",
       "length": 0
     },
     "Tango": {
-      "ratio": 8,
+      "weight": 8,
       "tempo": "slow",
       "length": 0
     },
     "Viennese Waltz": {
-      "ratio": 5,
+      "weight": 5,
       "tempo": "quick",
       "length": 120
     },
     "Quickstep": {
-      "ratio": 3,
+      "weight": 3,
       "tempo": "quick",
       "length": 150
     },
     "Rumba": {
-      "ratio": 10,
+      "weight": 10,
       "tempo": "slow",
       "length": 0
     },
     "ChaCha": {
-      "ratio": 10,
+      "weight": 10,
       "tempo": "quick",
       "length": 0
     },
     "Samba": {
-      "ratio": 6,
+      "weight": 6,
       "tempo": "quick",
       "length": 150
     },
     "Jive": {
-      "ratio": 3,
+      "weight": 3,
       "tempo": "quick",
       "length": 140
     },
     "Paso Doble": {
-      "ratio": 3,
+      "weight": 3,
       "tempo": "quick",
       "length": 120
     },
     "Hustle": {
-      "ratio": 4,
+      "weight": 4,
       "tempo": "quick",
       "length": 0
     },
     "Salsa": {
-      "ratio": 4,
+      "weight": 4,
       "tempo": "quick",
       "length": 0
     },
     "Bachata": {
-      "ratio": 5,
+      "weight": 5,
       "tempo": "slow",
       "length": 0
     },
     "Merengue": {
-      "ratio": 3,
+      "weight": 3,
       "tempo": "quick",
       "length": 0
     },
     "West Coast Swing": {
-      "ratio": 2,
+      "weight": 2,
       "tempo": "slow",
       "length": 0
     },
     "Swing": {
-      "ratio": 4,
+      "weight": 4,
       "tempo": "quick",
       "length": 0
     },
     "Bolero": {
-      "ratio": 2,
+      "weight": 2,
       "tempo": "slow",
       "length": 0
     },
     "Country Two Step": {
-      "ratio": 2,
+      "weight": 2,
       "tempo": "quick",
       "length": 0
     },
     "Nightclub Two Step": {
-      "ratio": 2,
+      "weight": 2,
       "tempo": "slow",
       "length": 0
     }
