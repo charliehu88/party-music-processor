@@ -20,6 +20,7 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--source", "-s", default="./input_mp3s", help="Path to source MP3s")
+    parser.add_argument("--favorite", "-f", help="Path to favorite MP3s directory (prioritized)")
     parser.add_argument("--output", "-o", default="./output_mp4s", help="Path to output folder")
     parser.add_argument("--config", "-cfg", default="dance_config.json", help="Path to weights JSON")
     parser.add_argument("--count", "-c", type=int, default=20, help="Number of songs")
@@ -61,26 +62,42 @@ def get_dance_type(filename, all_dances):
         return match.group(1).title()
     return None
 
-def parse_library(source_dir, all_dances):
+def parse_libraries(source_dir, favorite_dir, all_dances):
     library = {}
-    if not os.path.exists(source_dir):
-        return library
-        
-    count = 0
-    for filename in os.listdir(source_dir):
-        if not filename.lower().endswith(".mp3"):
-            continue
-            
-        dtype = get_dance_type(filename, all_dances)
-        if not dtype:
-            continue
-            
-        if dtype not in library:
-            library[dtype] = []
-        library[dtype].append(filename)
-        count += 1
-        
-    print(f"Parsed {count} songs into library.")
+    
+    def add_songs_from_dir(dir_path, is_favorite):
+        if not os.path.exists(dir_path):
+            return 0
+        count = 0
+        for filename in os.listdir(dir_path):
+            if not filename.lower().endswith(".mp3"):
+                continue
+                
+            dtype = get_dance_type(filename, all_dances)
+            if not dtype:
+                continue
+                
+            if dtype not in library:
+                library[dtype] = []
+            # Avoid duplicates by filename
+            if not any(song['filename'] == filename for song in library[dtype]):
+                library[dtype].append({
+                    'filename': filename,
+                    'dir': dir_path,
+                    'is_favorite': is_favorite
+                })
+                count += 1
+        return count
+    
+    total_count = 0
+    if favorite_dir:
+        fav_count = add_songs_from_dir(favorite_dir, True)
+        print(f"Parsed {fav_count} favorite songs.")
+        total_count += fav_count
+    src_count = add_songs_from_dir(source_dir, False)
+    print(f"Parsed {src_count} source songs.")
+    total_count += src_count
+    print(f"Total: {total_count} songs in library.")
     return library
 
 def calculate_global_quotas(target_count, dance_config, library):
@@ -130,12 +147,12 @@ def arrange_abundance_aware(drafted_songs, dance_config, all_dances):
         
         type_counts = {}
         for s in pool:
-            t = get_dance_type(s, all_dances)
+            t = get_dance_type(s['filename'], all_dances)
             type_counts[t] = type_counts.get(t, 0) + 1
             
         for song in pool:
             score = 0
-            dtype = get_dance_type(song, all_dances)
+            dtype = get_dance_type(song['filename'], all_dances)
             
             # Fetch tempo from dynamic config
             is_slow = dance_config.get(dtype, {}).get('tempo', '').lower() == 'slow'
@@ -162,7 +179,7 @@ def arrange_abundance_aware(drafted_songs, dance_config, all_dances):
         final_playlist.append(best_candidate)
         pool.remove(best_candidate)
         
-        last_type = get_dance_type(best_candidate, all_dances)
+        last_type = get_dance_type(best_candidate['filename'], all_dances)
         is_slow_type = dance_config.get(last_type, {}).get('tempo', '').lower() == 'slow'
         last_speed = 'Slow' if is_slow_type else 'Quick'
         
@@ -179,8 +196,8 @@ def interactive_swap(playlist, all_dances):
         print("="*60)
         for i, song in enumerate(playlist):
             idx = i + 1
-            dtype = get_dance_type(song, all_dances)
-            clean_name = os.path.splitext(song)[0]
+            dtype = get_dance_type(song['filename'], all_dances)
+            clean_name = os.path.splitext(song['filename'])[0]
             print(f"{idx:02d}. [{dtype}] {clean_name}")
         print("="*60)
         print("\nOPTIONS:")
@@ -200,7 +217,7 @@ def interactive_swap(playlist, all_dances):
                 song_b = playlist[b]
                 playlist[a] = song_b
                 playlist[b] = song_a
-                print(f"\n✅ SWAPPED: #{a+1} {get_dance_type(song_a, all_dances)} <--> #{b+1} {get_dance_type(song_b, all_dances)}")
+                print(f"\n✅ SWAPPED: #{a+1} {get_dance_type(song_a['filename'], all_dances)} <--> #{b+1} {get_dance_type(song_b['filename'], all_dances)}")
             else:
                 print("\n❌ Error: Song numbers out of range.")
         else:
@@ -232,7 +249,7 @@ def print_statistics(playlist, dance_config, args, all_dances):
     total_seconds = 0
     
     for song in playlist:
-        dtype = get_dance_type(song, all_dances)
+        dtype = get_dance_type(song['filename'], all_dances)
         stats[dtype] = stats.get(dtype, 0) + 1
         
         if any(d.lower() == dtype.lower() for d in STANDARD_DANCES):
@@ -353,8 +370,8 @@ def main():
     if args.mp3 and not os.path.exists(args.output_mp3):
         os.makedirs(args.output_mp3)
         
-    print(f"Scanning library at: {args.source}")
-    library = parse_library(args.source, all_dances)
+    print(f"Scanning libraries at: {args.source}" + (f" and {args.favorite}" if args.favorite else ""))
+    library = parse_libraries(args.source, args.favorite, all_dances)
     if not library:
         print("No valid songs found.")
         return
@@ -377,31 +394,36 @@ def main():
             used_songs_tracker[dtype] = set()
             
         picked = []
-        available = list(candidates)
-        random.shuffle(available)
+        favorites = [c for c in candidates if c['is_favorite']]
+        non_favorites = [c for c in candidates if not c['is_favorite']]
         
-        while len(picked) < count:
-            if not available:
-                available = list(candidates)
-                random.shuffle(available)
-            selection = available.pop()
-            picked.append(selection)
+        # Shuffle both lists
+        random.shuffle(favorites)
+        random.shuffle(non_favorites)
+        
+        # Pick from favorites first
+        while len(picked) < count and favorites:
+            picked.append(favorites.pop())
+        
+        # Then from non-favorites
+        while len(picked) < count and non_favorites:
+            picked.append(non_favorites.pop())
             
         drafted_songs.extend(picked)
 
     # --- 3. RESERVE LAST DANCE ---
     reserved_last = None
     for i, song in enumerate(drafted_songs):
-        if get_dance_type(song, all_dances).lower() == 'waltz':
+        if get_dance_type(song['filename'], all_dances).lower() == 'waltz':
             reserved_last = drafted_songs.pop(i)
-            print(f"💾 Reserved Last Dance: {reserved_last}")
+            print(f"💾 Reserved Last Dance: {reserved_last['filename']}")
             break
             
     if not reserved_last and 'Waltz' in library and library['Waltz']:
         reserved_last = random.choice(library['Waltz'])
         if drafted_songs:
             drafted_songs.pop()
-        print(f"💾 Forced Last Dance: {reserved_last}")
+        print(f"💾 Forced Last Dance: {reserved_last['filename']}")
 
     # --- 4. ARRANGE ---
     master_playlist = arrange_abundance_aware(drafted_songs, dance_config, all_dances)
@@ -417,8 +439,9 @@ def main():
         
     print("Starting batch generation...")
     
-    for i, mp3_filename in enumerate(master_playlist):
+    for i, song in enumerate(master_playlist):
         seq_index = i + 1
+        mp3_filename = song['filename']
         dtype = get_dance_type(mp3_filename, all_dances)
         
         # Fetch dynamic settings from JSON
@@ -440,7 +463,8 @@ def main():
         current_meta = extract_metadata(mp3_filename)
         next_meta = None
         if i + 1 < len(master_playlist):
-            next_filename = master_playlist[i+1]
+            next_song = master_playlist[i+1]
+            next_filename = next_song['filename']
             next_meta = extract_metadata(next_filename)
             
         temp_img_path = os.path.join(args.output, f"temp_cover_{seq_index}.png")
@@ -451,7 +475,7 @@ def main():
             clean_name = f"{seq_index:02d}_{mp3_filename.replace(' ','_')}"
             mp3_out_path = os.path.join(args.output_mp3, clean_name)
             
-        create_media(args.source, args.output, mp3_filename, seq_index, temp_img_path, track_settings, mp3_out_path)
+        create_media(song['dir'], args.output, mp3_filename, seq_index, temp_img_path, track_settings, mp3_out_path)
         os.remove(temp_img_path)
         
     print(f"\nDone! Videos located in: {args.output}")

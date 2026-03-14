@@ -110,15 +110,18 @@ yt-dlp -x --audio-format mp3 -o "input_mp3s/DanceType - SongName.%(ext)s" "YOUTU
 Run the processor via command line:
 
 ```bash
-python process.py --source ./input_mp3s --output ./output_mp4s --count 20
+python process.py --source ./input_mp3s --favorite ./favorites --output ./output_mp4s --count 20
 
 ```
 
 *(Run `python process.py -h` to see all available arguments like fade duration, song lengths, etc.)*
 
+The processor prioritizes songs from the `--favorite` directory over the `--source` directory for each dance type. If favorites are available for a type, they are selected first before falling back to source songs.
+
 **Arguments:**
 
 * `--source`: Folder containing your MP3s.
+* `--favorite`: Folder containing favorite MP3s (prioritized over source).
 * `--output`: Folder where MP4s will be saved.
 * `--config`: Path to the JSON weights file (default: `dance_config.json`).
 * `--count`: Number of songs to generate (default: `20`).
@@ -126,6 +129,8 @@ python process.py --source ./input_mp3s --output ./output_mp4s --count 20
 * `--length-slow`: Max length for Slow dances in seconds (default: `180` = 3m 00s).
 * `--fade`: Fade out duration in seconds (default: `3`).
 * `--silence`: Silence padding in seconds (default: `8`).
+* `--mp3`: Also export processed MP3 files.
+* `--output-mp3`: Folder for processed MP3s (default: `./output_processed_mp3s`).
 * `--mp3`: Also export processed MP3 files.
 * `--output-mp3`: Folder for processed MP3s (default: `./output_processed_mp3s`).
 
