@@ -15,10 +15,10 @@ It automates the DJ process by:
 ```text
 party-music-processor/
 ├── assets/
-│   └── cover.jpg          # (Required) Background image for video generation
 ├── input_mp3s/            # Drop your source music here
 ├── output_mp4s/           # Generated video files appear here
 ├── .venv/                 # Python virtual environment
+├── NotoSansSC-VariableFont_wght.ttf  # Font for video overlays
 ├── process.py             # Core processing logic
 ├── download.py            # Batch downloader tool
 ├── uploader.py            # Automated YouTube uploader
@@ -126,20 +126,38 @@ python process.py --source ./input_mp3s --output ./output_mp4s --count 20
 * `--length-slow`: Max length for Slow dances in seconds (default: `180` = 3m 00s).
 * `--fade`: Fade out duration in seconds (default: `3`).
 * `--silence`: Silence padding in seconds (default: `8`).
+* `--mp3`: Also export processed MP3 files.
+* `--output-mp3`: Folder for processed MP3s (default: `./output_processed_mp3s`).
 
 ## ⚙️ Configuration (Weights)
 
-Edit `dance_config.json` to change the probability of specific dance styles appearing (e.g., `0.15` = 15%).
+Edit `dance_config.json` to change the probability of specific dance styles appearing. Each dance has a `weight` (relative importance), `tempo` ("slow" or "quick"), and optional `length` (custom max duration in seconds, 0 uses defaults).
 
 ```json
 {
-  "weights": {
-    "Waltz": 0.15,
-    "ChaCha": 0.10,
-    "Viennese Waltz": 0.00
+  "dances": {
+    "Waltz": {
+      "weight": 10,
+      "tempo": "slow",
+      "length": 0
+    },
+    "Foxtrot": {
+      "weight": 5,
+      "tempo": "slow",
+      "length": 0
+    },
+    "ChaCha": {
+      "weight": 10,
+      "tempo": "quick",
+      "length": 0
+    },
+    "Viennese Waltz": {
+      "weight": 5,
+      "tempo": "quick",
+      "length": 120
+    }
   }
 }
-
 ```
 
 ## 📤 Step 3: Upload to YouTube
@@ -178,7 +196,7 @@ To see exactly how to use each tool, append `-h` when running them from the comm
 
 * **`speed_adjuster.py`**: Modify the tempo (BPM) of specific dance tracks if they are too fast or too slow for a particular dance style.
 * **`volume_adjuster.py`**: Manually normalize or adjust the volume of individual files that fall outside the standard processing ranges.
-* **`video_splitter.py` / `split_manual.py**`: Tools for splitting longer continuous mixes or existing video files into individual, cleanly cut dance tracks.
+* **`video_splitter.py` / `split_manual.py`**: Tools for splitting longer continuous mixes or existing video files into individual, cleanly cut dance tracks.
 * **`converter.py`**: A general helper utility for handling various media format conversions.
 
 ```
