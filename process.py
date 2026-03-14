@@ -84,8 +84,8 @@ def parse_library(source_dir, all_dances):
     return library
 
 def calculate_global_quotas(target_count, dance_config, library):
-    # Extract only the 'ratio' weights for calculation
-    weights = {k: v.get('ratio', 0) for k, v in dance_config.items()}
+    # Extract only the 'weight' weights for calculation
+    weights = {k: v.get('weight', 0) for k, v in dance_config.items()}
     valid_weights = {k: v for k, v in weights.items() if k in library and library[k]}
     
     total_weight = sum(valid_weights.values())
