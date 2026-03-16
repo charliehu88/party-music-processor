@@ -7,7 +7,7 @@ import shutil
 HISTORY_FILE = "download_history.log"
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Universal Batch Downloader (YouTube, SoundCloud, TikTok, etc.)")
+    parser = argparse.ArgumentParser(description="Universal Batch Downloader (YouTube, SoundCloud, TikTok, etc.)", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--list", "-l", default="downloads.txt", help="Path to the list file (Format: URL | Name)")
     parser.add_argument("--output", "-o", default="input_mp3s", help="Folder to save downloads")
     parser.add_argument("--browser", "-b", help="Load cookies from browser (e.g. 'chrome', 'safari', 'firefox')")
