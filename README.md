@@ -21,6 +21,7 @@ party-music-processor/
 ├── NotoSansSC-VariableFont_wght.ttf  # Font for video overlays
 ├── process.py             # Core processing logic
 ├── download.py            # Batch downloader tool
+├── playlist_2_file.py     # Playlist extractor tool
 ├── uploader.py            # Automated YouTube uploader
 ├── speed_adjuster.py      # Utility: Adjusts audio/video speed
 ├── volume_adjuster.py     # Utility: Adjusts audio volume
@@ -85,7 +86,19 @@ python download.py
 
 *(Run `python download.py -h` for usage details)*
 
-**Option B: Manual Download**
+**Option B: Extract YouTube Playlist to Downloads List**
+
+If you have a YouTube playlist, use `playlist_2_file.py` to automatically generate a `downloads.txt`-style list with auto-detected dance types:
+
+```bash
+python playlist_2_file.py --playlist "https://www.youtube.com/playlist?list=OLAK5uy_..." --file my_playlist.txt
+```
+
+This tool analyzes each video's title and description to detect dance types (e.g., "Waltz", "ChaCha", "Viennese Waltz"). It outputs lines in the format: `https://youtu.be/<id> | <Dance Type> - <Title>`
+
+*(Run `python playlist_2_file.py -h` for usage details)*
+
+**Option C: Manual Download**
 
 ```bash
 yt-dlp -x --audio-format mp3 -o "input_mp3s/DanceType - SongName.%(ext)s" "YOUTUBE_URL"
