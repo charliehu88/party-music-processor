@@ -103,7 +103,9 @@ def merge_videos(list_file, output_filename):
         os.remove(output_filename)
 
     cmd = [
-        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "ffmpeg", "-y", 
+        "-fflags", "+genpts",
+        "-f", "concat", "-safe", "0",
         "-i", list_file,
         "-c", "copy",
         output_filename
