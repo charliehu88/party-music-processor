@@ -1,0 +1,136 @@
+python process.py -c 35 --config NCLS-sep-20260328.json 
+Loading rules from: NCLS-sep-20260328.json
+Scanning libraries at: ./input_mp3s
+Parsed 317 source songs.
+Total: 317 songs in library.
+Calculating quotas based on Config Weights...
+  - Waltz: 4
+  - Foxtrot: 4
+  - Tango: 4
+  - Viennese Waltz: 2
+  - Quickstep: 2
+  - Rumba: 4
+  - Chacha: 4
+  - Samba: 1
+  - Jive: 1
+  - Paso Doble: 1
+  - Hustle: 3
+  - Salsa: 1
+  - Bachata: 3
+  - Bolero: 1
+💾 Reserved Last Dance: Waltz - Valzer Lento - Schwarzer Walzer (from  Der Alte).mp3
+Arranging playlist (Focus: Even Distribution for ALL types)...
+
+============================================================
+📝 REVIEW PLAYLIST ORDER
+============================================================
+01. [Tango] Tango - 《Tango》Echoes of an Embrace〈32BPM〉TG-005
+02. [Chacha] Chacha- Katchi  Ofenbach
+03. [Rumba] Rumba- Whispers of Havana
+04. [Hustle] Hustle- Party All the Time
+05. [Foxtrot] Foxtrot- Theme of Pink Panther
+06. [Quickstep] Quickstep - 《QuickStep》Run the Rhythm Tonight〈50BPM〉QS-002
+07. [Bachata] Bachata-Calle del deseo
+08. [Chacha] Chacha - 🎶✨ Dancing Through the Night  Romantic Cha-cha Love Song (Male Vocal) 💃🕺
+09. [Waltz] Waltz- Dreamcather
+10. [Viennese Waltz] Viennese Waltz- 天际
+11. [Rumba] Rumba - Rumba El Jardin Guitar
+12. [Hustle] Hustle - Saturday Night Fever
+13. [Foxtrot] Foxtrot - 《SlowFoxtrot》Glass River Echoes〈28BPM〉SF-005
+14. [Chacha] Chacha - 《ChaChaCha》Voices in the Falling Light〈30BPM〉CC-004
+15. [Tango] Tango - 《Tango》Silence in Motion〈32BPM〉
+16. [Salsa] Salsa - Marc Anthony - Nadie como ella
+17. [Waltz] Waltz - 《Waltz》White Heart〈28BPM〉WZ-004
+18. [Quickstep] Quickstep - 《QuickStep》Run the Rhythm Tonight〈50BPM〉
+19. [Bachata] Bachata - Bachata Romeo Santos, SUS HUELLAS     Marco y Sara
+20. [Viennese Waltz] Viennese waltz- rain outside of window
+21. [Rumba] Rumba - Rumba Historia de un Amor
+22. [Hustle] Hustle - 07 - Boney M. - Rasputin -  The Magic Of Boney M.
+23. [Foxtrot] Foxtrot - SLOW FOXTROT music   Coffe Jones
+24. [Paso Doble] Paso Doble- Music
+25. [Tango] Tango - 《Tango》Hotel Victoria  - Cover if 2CELLOS〈32BPM〉TG-006
+26. [Samba] Samba - 🔥 SAMBA TAKE US  Samba Practice Music – 50 BPM 🔥
+27. [Bolero] Bolero - Whispers of Havana 🎵 Old Cuban Boleros & Gentle Street Ambience
+28. [Chacha] Chacha- Charanga
+29. [Foxtrot] Foxtrot - 《SlowFoxtrot》いつかのメリークリスマスOriginal by B'z〈28BPM〉
+30. [Jive] Jive or Swing- Crazy Little Thing
+31. [Bachata] Bachata-Tu perfume
+32. [Waltz] Waltz- 飄搖 - 周迅
+33. [Tango] Tango - 《Tango》Ferrum Noctis〈32BPM〉
+34. [Rumba] Rumba - Consuelo Velázquez - Bésame Mucho  Cover  Alexandra Ilieva & Family  Thomann
+35. [Waltz] Waltz - Valzer Lento - Schwarzer Walzer (from  Der Alte)
+============================================================
+
+OPTIONS:
+ - Type '23-46' to swap song #23 and #46
+ - Press ENTER to Accept and Start Generation
+
+> 
+
+========================================
+📊 FINAL STATISTICS (35 songs)
+   ⏱️  Max Duration: 1h 35m 10s (approx)
+------------------------------------
+   Standard: 16 | Latin: 19
+   Slow: 20 | Quick: 15
+========================================
+DANCE TYPE           | COUNT | %    
+------------------------------------
+Tango                | 4     | 11.4%
+Chacha               | 4     | 11.4%
+Rumba                | 4     | 11.4%
+Foxtrot              | 4     | 11.4%
+Waltz                | 4     | 11.4%
+Hustle               | 3     | 8.6%
+Bachata              | 3     | 8.6%
+Quickstep            | 2     | 5.7%
+Viennese Waltz       | 2     | 5.7%
+Salsa                | 1     | 2.9%
+Paso Doble           | 1     | 2.9%
+Samba                | 1     | 2.9%
+Bolero               | 1     | 2.9%
+Jive                 | 1     | 2.9%
+========================================
+
+Starting batch generation...
+
+Done! Videos located in: ./output_mp4s
+
+🔍 Scanning 35 generated MP4 files...
+  01_Tango_-_《Tango》Echoes_of_an_Embrace〈32BPM〉TG-005.mp4: 159.0s
+  02_Chacha-_Katchi__Ofenbach.mp4: 131.3s
+  03_Rumba-_Whispers_of_Havana.mp4: 190.6s
+  04_Hustle-_Party_All_the_Time.mp4: 159.4s
+  05_Foxtrot-_Theme_of_Pink_Panther.mp4: 159.2s
+  06_Quickstep_-_《QuickStep》Run_the_Rhythm_Tonight〈50BPM〉QS-002.mp4: 159.8s
+  07_Bachata-Calle_del_deseo.mp4: 177.0s
+  08_Chacha_-_🎶✨_Dancing_Through_the_Night__Romantic_Cha-cha_Love_Song_(Male_Vocal)_💃🕺.mp4: 159.8s
+  09_Waltz-_Dreamcather.mp4: 189.8s
+  10_Viennese_Waltz-_天际.mp4: 129.5s
+  11_Rumba_-_Rumba_El_Jardin_Guitar.mp4: 161.2s
+  12_Hustle_-_Saturday_Night_Fever.mp4: 160.4s
+  13_Foxtrot_-_《SlowFoxtrot》Glass_River_Echoes〈28BPM〉SF-005.mp4: 159.8s
+  14_Chacha_-_《ChaChaCha》Voices_in_the_Falling_Light〈30BPM〉CC-004.mp4: 159.4s
+  15_Tango_-_《Tango》Silence_in_Motion〈32BPM〉.mp4: 135.8s
+  16_Salsa_-_Marc_Anthony_-_Nadie_como_ella.mp4: 129.2s
+  17_Waltz_-_《Waltz》White_Heart〈28BPM〉WZ-004.mp4: 183.6s
+  18_Quickstep_-_《QuickStep》Run_the_Rhythm_Tonight〈50BPM〉.mp4: 160.1s
+  19_Bachata_-_Bachata_Romeo_Santos,_SUS_HUELLAS_____Marco_y_Sara.mp4: 190.1s
+  20_Viennese_waltz-_rain_outside_of_window.mp4: 129.2s
+  21_Rumba_-_Rumba_Historia_de_un_Amor.mp4: 189.8s
+  22_Hustle_-_07_-_Boney_M._-_Rasputin_-__The_Magic_Of_Boney_M..mp4: 159.4s
+  23_Foxtrot_-_SLOW_FOXTROT_music___Coffe_Jones.mp4: 159.4s
+  24_Paso_Doble-_Music.mp4: 128.6s
+  25_Tango_-_《Tango》Hotel_Victoria__-_Cover_if_2CELLOS〈32BPM〉TG-006.mp4: 147.0s
+  26_Samba_-_🔥_SAMBA_TAKE_US__Samba_Practice_Music_–_50_BPM_🔥.mp4: 129.8s
+  27_Bolero_-_Whispers_of_Havana_🎵_Old_Cuban_Boleros_&_Gentle_Street_Ambience.mp4: 189.4s
+  28_Chacha-_Charanga.mp4: 159.0s
+  29_Foxtrot_-_《SlowFoxtrot》いつかのメリークリスマスOriginal_by_B'z〈28BPM〉.mp4: 159.4s
+  30_Jive_or_Swing-_Crazy_Little_Thing.mp4: 129.4s
+  31_Bachata-Tu_perfume.mp4: 189.8s
+  32_Waltz-_飄搖_-_周迅.mp4: 189.8s
+  33_Tango_-_《Tango》Ferrum_Noctis〈32BPM〉.mp4: 159.0s
+  34_Rumba_-_Consuelo_Velázquez_-_Bésame_Mucho__Cover__Alexandra_Ilieva_&_Family__Thomann.mp4: 189.4s
+  35_Waltz_-_Valzer_Lento_-_Schwarzer_Walzer_(from__Der_Alte).mp4: 168.3s
+
+🎵 EXACT PLAYLIST DURATION: 1h 33m 51s (5631.6 seconds total)

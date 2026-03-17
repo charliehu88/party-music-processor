@@ -291,6 +291,40 @@ def print_statistics(playlist, dance_config, args, all_dances):
         print(f"{dtype:<20} | {count:<5} | {percent:.1f}%")
     print("="*40 + "\n")
 
+def get_video_duration(file_path):
+    """Get duration of video file in seconds using ffprobe"""
+    try:
+        cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', 
+               '-of', 'default=noprint_wrappers=1:nokey=1', file_path]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            return float(result.stdout.strip())
+        else:
+            print(f"Warning: Could not get duration for {file_path}")
+            return 0
+    except Exception as e:
+        print(f"Warning: Error getting duration for {file_path}: {e}")
+        return 0
+
+def calculate_playlist_total_duration(output_dir):
+    """Calculate total duration of all MP4 files in output directory"""
+    if not os.path.exists(output_dir):
+        return 0
+    
+    total_duration = 0
+    mp4_files = [f for f in os.listdir(output_dir) if f.lower().endswith('.mp4')]
+    mp4_files.sort()  # Sort to ensure consistent order
+    
+    print(f"\n🔍 Scanning {len(mp4_files)} generated MP4 files...")
+    
+    for mp4_file in mp4_files:
+        file_path = os.path.join(output_dir, mp4_file)
+        duration = get_video_duration(file_path)
+        total_duration += duration
+        print(f"  {mp4_file}: {duration:.1f}s")
+    
+    return total_duration
+
 def extract_metadata(filename):
     base = os.path.splitext(filename)[0].replace('_', ' ').strip()
     parts = base.split('-', 1)
@@ -481,6 +515,16 @@ def main():
     print(f"\nDone! Videos located in: {args.output}")
     if args.mp3:
         print(f"MP3s located in: {args.output_mp3}")
+    
+    # Calculate and display exact total duration
+    total_duration = calculate_playlist_total_duration(args.output)
+    if total_duration > 0:
+        hours = int(total_duration // 3600)
+        minutes = int((total_duration % 3600) // 60)
+        seconds = int(total_duration % 60)
+        print(f"\n🎵 EXACT PLAYLIST DURATION: {hours}h {minutes}m {seconds}s ({total_duration:.1f} seconds total)")
+    else:
+        print("\n⚠️ Could not calculate playlist duration")
 
 if __name__ == "__main__":
     main()

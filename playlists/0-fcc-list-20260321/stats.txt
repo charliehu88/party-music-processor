@@ -1,0 +1,180 @@
+ python process.py -f favorite/ -c 50 --config fcc-dance-config.json 
+Loading rules from: fcc-dance-config.json
+Scanning libraries at: ./input_mp3s and favorite/
+Parsed 11 favorite songs.
+Parsed 316 source songs.
+Total: 327 songs in library.
+Calculating quotas based on Config Weights...
+  - Waltz: 4
+  - Foxtrot: 3
+  - Tango: 4
+  - Viennese Waltz: 3
+  - Quickstep: 3
+  - Rumba: 3
+  - Chacha: 4
+  - Samba: 4
+  - Jive: 2
+  - Paso Doble: 1
+  - Hustle: 3
+  - Salsa: 2
+  - Bachata: 4
+  - Merengue: 2
+  - West Coast Swing: 2
+  - Bolero: 2
+  - Country Two Step: 2
+  - Nightclub Two Step: 2
+💾 Reserved Last Dance: Waltz - ✨ WALTZ OF LIGHT  Slow Waltz Practice Music – 30 BPM ✨.mp3
+Arranging playlist (Focus: Even Distribution for ALL types)...
+
+============================================================
+📝 REVIEW PLAYLIST ORDER
+============================================================
+01. [Bachata] Bachata-Juego de miradas
+02. [Samba] Samba - 《Samba》Tú y Yo en la Ola〈50BPM〉
+03. [Tango] Tango - TANGO music   Amado Tango
+04. [Chacha] Chacha - Cha-cha-cha – It’s a Beautiful Day  32 BPM
+05. [Foxtrot] Foxtrot - 《SlowFoxtrot》Velvet Steps〈28BPM〉SF-004
+06. [Hustle] Hustle - Saturday Night Fever
+07. [Bachata] Bachata-Bailando en secreto
+08. [Samba] Samba - 《Samba》Softline Echo〈50BPM〉SB-001
+09. [Waltz] Waltz - Tokyo Waltz
+10. [Chacha] Chacha - 《ChaChaCha》Voices in the Falling Light〈30BPM〉CC-004
+11. [Rumba] Rumba or Bolero-Simple Love
+12. [Viennese Waltz] Viennese Waltz - The Endless Waltz - Shostakovich - Waltz No. 2 (Original Vocal Cover)  Dark Academia Aesthetic
+13. [Tango] Tango - Bella Ciao
+14. [Quickstep] Quickstep - QUICKSTEP music   When I'm With You
+15. [West Coast Swing] West Coast Swing - Say You Love Me — Jessie Ware
+16. [Jive] Jive - Slow Jive Music 011
+17. [Foxtrot] Foxtrot - SLOW FOXTROT music   Coffe Jones
+18. [Chacha] Chacha - Cha Cha Cha Practice – 32 BPM 🎶 Ríe Conmigo (Baila La Vida)💃
+19. [Rumba] Rumba - Rumba El Jardin Guitar
+20. [Samba] Samba - Samba Practice – 50 BPM  Fire in the Guajira Night
+21. [Bachata] Bachata-Calle del deseo
+22. [Country Two Step] Country two step- Conway Twitty
+23. [Bolero] Bolero - Michael Bublé - Help Me Make It Through The Night (feat. Loren Allred) [Official Audio]
+24. [Viennese Waltz] Viennese Waltz - Sotto La Luna – A 1960s Italian Love Song Beneath the Moon
+25. [Tango] Tango - TANGO  Dj Ice - New Rules
+26. [Quickstep] Quickstep - QUICKSTEP music Da Bob
+27. [Waltz] Waltz - Waltz Valzer Lento   Lost in love   LauraEuropa1
+28. [Hustle] Hustle - 07 - Boney M. - Rasputin -  The Magic Of Boney M.
+29. [Nightclub Two Step] NightClub Two Step - Anytime
+30. [Merengue] merengue- LA ESENCIA DEL AMOR
+31. [Rumba] Rumba - RUMBA OF ROMANCE  Men say của Tình yêu
+32. [Salsa] Salsa or Samba- Despacito Luis Fonsi
+33. [Foxtrot] Foxtrot - Les Parapluies de Cherbourg_-10
+34. [Chacha] Chacha - 《ChaChaCha》Saffron Dune Relay〈30BPM〉CC-006
+35. [West Coast Swing] West Coast Swing - Acoustic — Billy Raffoul
+36. [Samba] Samba - Surun pyyhit silmistäni Diandra ja Mikael Konttinen
+37. [Tango] Tango - 《Tango》Hotel Victoria  - Cover if 2CELLOS〈32BPM〉TG-006
+38. [Quickstep] Quickstep- Tropicana
+39. [Bachata] Bachata-Midnight Suave
+40. [Hustle] Hustle- Party All the Time
+41. [Waltz] Waltz - Eric Chiryoku - Raining Tunes  Summer in My Heart
+42. [Country Two Step] Country Two Step - Josh Turner - Why Don't We Just Dance
+43. [Bolero] Bolero - In Your Arms Again   Romantic Rumba Bolero for Her
+44. [Viennese Waltz] Viennese Waltz - Viennese Waltz Practice Music 58 BPM  Ballroom Rotation Training  10-Minute Continuous
+45. [Nightclub Two Step] NightClub Two Step - My Everything
+46. [Merengue] Merengue - merengue LA ESENCIA DEL AMOR
+47. [Salsa] Salsa - Salsa or Samba Despacito   Luis Fonsi
+48. [Jive] Jive - Crazy Little Thing Called Love
+49. [Paso Doble] Paso Doble - FCC Paso Doble Music
+50. [Waltz] Waltz - ✨ WALTZ OF LIGHT  Slow Waltz Practice Music – 30 BPM ✨
+============================================================
+
+OPTIONS:
+ - Type '23-46' to swap song #23 and #46
+ - Press ENTER to Accept and Start Generation
+
+> 49-25
+
+✅ SWAPPED: #49 Paso Doble <--> #25 Tango
+
+============================================================
+📝 REVIEW PLAYLIST ORDER
+============================================================
+01. [Bachata] Bachata-Juego de miradas
+02. [Samba] Samba - 《Samba》Tú y Yo en la Ola〈50BPM〉
+03. [Tango] Tango - TANGO music   Amado Tango
+04. [Chacha] Chacha - Cha-cha-cha – It’s a Beautiful Day  32 BPM
+05. [Foxtrot] Foxtrot - 《SlowFoxtrot》Velvet Steps〈28BPM〉SF-004
+06. [Hustle] Hustle - Saturday Night Fever
+07. [Bachata] Bachata-Bailando en secreto
+08. [Samba] Samba - 《Samba》Softline Echo〈50BPM〉SB-001
+09. [Waltz] Waltz - Tokyo Waltz
+10. [Chacha] Chacha - 《ChaChaCha》Voices in the Falling Light〈30BPM〉CC-004
+11. [Rumba] Rumba or Bolero-Simple Love
+12. [Viennese Waltz] Viennese Waltz - The Endless Waltz - Shostakovich - Waltz No. 2 (Original Vocal Cover)  Dark Academia Aesthetic
+13. [Tango] Tango - Bella Ciao
+14. [Quickstep] Quickstep - QUICKSTEP music   When I'm With You
+15. [West Coast Swing] West Coast Swing - Say You Love Me — Jessie Ware
+16. [Jive] Jive - Slow Jive Music 011
+17. [Foxtrot] Foxtrot - SLOW FOXTROT music   Coffe Jones
+18. [Chacha] Chacha - Cha Cha Cha Practice – 32 BPM 🎶 Ríe Conmigo (Baila La Vida)💃
+19. [Rumba] Rumba - Rumba El Jardin Guitar
+20. [Samba] Samba - Samba Practice – 50 BPM  Fire in the Guajira Night
+21. [Bachata] Bachata-Calle del deseo
+22. [Country Two Step] Country two step- Conway Twitty
+23. [Bolero] Bolero - Michael Bublé - Help Me Make It Through The Night (feat. Loren Allred) [Official Audio]
+24. [Viennese Waltz] Viennese Waltz - Sotto La Luna – A 1960s Italian Love Song Beneath the Moon
+25. [Paso Doble] Paso Doble - FCC Paso Doble Music
+26. [Quickstep] Quickstep - QUICKSTEP music Da Bob
+27. [Waltz] Waltz - Waltz Valzer Lento   Lost in love   LauraEuropa1
+28. [Hustle] Hustle - 07 - Boney M. - Rasputin -  The Magic Of Boney M.
+29. [Nightclub Two Step] NightClub Two Step - Anytime
+30. [Merengue] merengue- LA ESENCIA DEL AMOR
+31. [Rumba] Rumba - RUMBA OF ROMANCE  Men say của Tình yêu
+32. [Salsa] Salsa or Samba- Despacito Luis Fonsi
+33. [Foxtrot] Foxtrot - Les Parapluies de Cherbourg_-10
+34. [Chacha] Chacha - 《ChaChaCha》Saffron Dune Relay〈30BPM〉CC-006
+35. [West Coast Swing] West Coast Swing - Acoustic — Billy Raffoul
+36. [Samba] Samba - Surun pyyhit silmistäni Diandra ja Mikael Konttinen
+37. [Tango] Tango - 《Tango》Hotel Victoria  - Cover if 2CELLOS〈32BPM〉TG-006
+38. [Quickstep] Quickstep- Tropicana
+39. [Bachata] Bachata-Midnight Suave
+40. [Hustle] Hustle- Party All the Time
+41. [Waltz] Waltz - Eric Chiryoku - Raining Tunes  Summer in My Heart
+42. [Country Two Step] Country Two Step - Josh Turner - Why Don't We Just Dance
+43. [Bolero] Bolero - In Your Arms Again   Romantic Rumba Bolero for Her
+44. [Viennese Waltz] Viennese Waltz - Viennese Waltz Practice Music 58 BPM  Ballroom Rotation Training  10-Minute Continuous
+45. [Nightclub Two Step] NightClub Two Step - My Everything
+46. [Merengue] Merengue - merengue LA ESENCIA DEL AMOR
+47. [Salsa] Salsa - Salsa or Samba Despacito   Luis Fonsi
+48. [Jive] Jive - Crazy Little Thing Called Love
+49. [Tango] Tango - TANGO  Dj Ice - New Rules
+50. [Waltz] Waltz - ✨ WALTZ OF LIGHT  Slow Waltz Practice Music – 30 BPM ✨
+============================================================
+
+OPTIONS:
+ - Type '23-46' to swap song #23 and #46
+ - Press ENTER to Accept and Start Generation
+
+> 
+
+========================================
+📊 FINAL STATISTICS (50 songs)
+   ⏱️  Max Duration: 2h 13m 30s (approx)
+------------------------------------
+   Standard: 17 | Latin: 33
+   Slow: 24 | Quick: 26
+========================================
+DANCE TYPE           | COUNT | %    
+------------------------------------
+Bachata              | 4     | 8.0%
+Samba                | 4     | 8.0%
+Tango                | 4     | 8.0%
+Chacha               | 4     | 8.0%
+Waltz                | 4     | 8.0%
+Foxtrot              | 3     | 6.0%
+Hustle               | 3     | 6.0%
+Rumba                | 3     | 6.0%
+Viennese Waltz       | 3     | 6.0%
+Quickstep            | 3     | 6.0%
+West Coast Swing     | 2     | 4.0%
+Jive                 | 2     | 4.0%
+Country Two Step     | 2     | 4.0%
+Bolero               | 2     | 4.0%
+Nightclub Two Step   | 2     | 4.0%
+Merengue             | 2     | 4.0%
+Salsa                | 2     | 4.0%
+Paso Doble           | 1     | 2.0%
+========================================
