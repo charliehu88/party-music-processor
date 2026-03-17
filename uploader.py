@@ -30,6 +30,9 @@ def parse_args():
     
     parser.add_argument("--playlist", "-p", default=f"Dance Parties {today}", 
                         help="Name of the playlist (creates if not exists)")
+
+    parser.add_argument("--stats", "-s", default="", 
+                        help="Path to a stats.txt file to include in the video description")
     
     parser.add_argument("--privacy", choices=['private', 'unlisted', 'public'], default='unlisted',
                         help="Privacy level (default: unlisted)")
@@ -215,14 +218,24 @@ def main():
     success = merge_videos(list_file, args.file)
     if not success: return
 
-    # 2. Authenticate
+    # 2. Attach stats file (if provided)
+    if args.stats:
+        if os.path.exists(args.stats):
+            with open(args.stats, 'r', encoding='utf-8', errors='replace') as f:
+                stats_text = f.read().strip()
+            if stats_text:
+                chapters_desc += "\n\n📊 PLAYLIST STATS:\n" + stats_text
+        else:
+            print(f"⚠️ Stats file not found: {args.stats}")
+
+    # 3. Authenticate
     try:
         youtube = get_authenticated_service()
     except Exception as e:
         print(f"❌ Auth Error: {e}")
         return
 
-    # 3. Upload
+    # 4. Upload
     video_id = upload_video(youtube, args.file, args.title, chapters_desc, args.privacy)
 
     # 4. Playlist

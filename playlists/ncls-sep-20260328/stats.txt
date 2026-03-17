@@ -1,8 +1,4 @@
-python process.py -c 35 --config NCLS-sep-20260328.json 
-Loading rules from: NCLS-sep-20260328.json
-Scanning libraries at: ./input_mp3s
-Parsed 317 source songs.
-Total: 317 songs in library.
+
 Calculating quotas based on Config Weights...
   - Waltz: 4
   - Foxtrot: 4
@@ -20,52 +16,6 @@ Calculating quotas based on Config Weights...
   - Bolero: 1
 💾 Reserved Last Dance: Waltz - Valzer Lento - Schwarzer Walzer (from  Der Alte).mp3
 Arranging playlist (Focus: Even Distribution for ALL types)...
-
-============================================================
-📝 REVIEW PLAYLIST ORDER
-============================================================
-01. [Tango] Tango - 《Tango》Echoes of an Embrace〈32BPM〉TG-005
-02. [Chacha] Chacha- Katchi  Ofenbach
-03. [Rumba] Rumba- Whispers of Havana
-04. [Hustle] Hustle- Party All the Time
-05. [Foxtrot] Foxtrot- Theme of Pink Panther
-06. [Quickstep] Quickstep - 《QuickStep》Run the Rhythm Tonight〈50BPM〉QS-002
-07. [Bachata] Bachata-Calle del deseo
-08. [Chacha] Chacha - 🎶✨ Dancing Through the Night  Romantic Cha-cha Love Song (Male Vocal) 💃🕺
-09. [Waltz] Waltz- Dreamcather
-10. [Viennese Waltz] Viennese Waltz- 天际
-11. [Rumba] Rumba - Rumba El Jardin Guitar
-12. [Hustle] Hustle - Saturday Night Fever
-13. [Foxtrot] Foxtrot - 《SlowFoxtrot》Glass River Echoes〈28BPM〉SF-005
-14. [Chacha] Chacha - 《ChaChaCha》Voices in the Falling Light〈30BPM〉CC-004
-15. [Tango] Tango - 《Tango》Silence in Motion〈32BPM〉
-16. [Salsa] Salsa - Marc Anthony - Nadie como ella
-17. [Waltz] Waltz - 《Waltz》White Heart〈28BPM〉WZ-004
-18. [Quickstep] Quickstep - 《QuickStep》Run the Rhythm Tonight〈50BPM〉
-19. [Bachata] Bachata - Bachata Romeo Santos, SUS HUELLAS     Marco y Sara
-20. [Viennese Waltz] Viennese waltz- rain outside of window
-21. [Rumba] Rumba - Rumba Historia de un Amor
-22. [Hustle] Hustle - 07 - Boney M. - Rasputin -  The Magic Of Boney M.
-23. [Foxtrot] Foxtrot - SLOW FOXTROT music   Coffe Jones
-24. [Paso Doble] Paso Doble- Music
-25. [Tango] Tango - 《Tango》Hotel Victoria  - Cover if 2CELLOS〈32BPM〉TG-006
-26. [Samba] Samba - 🔥 SAMBA TAKE US  Samba Practice Music – 50 BPM 🔥
-27. [Bolero] Bolero - Whispers of Havana 🎵 Old Cuban Boleros & Gentle Street Ambience
-28. [Chacha] Chacha- Charanga
-29. [Foxtrot] Foxtrot - 《SlowFoxtrot》いつかのメリークリスマスOriginal by B'z〈28BPM〉
-30. [Jive] Jive or Swing- Crazy Little Thing
-31. [Bachata] Bachata-Tu perfume
-32. [Waltz] Waltz- 飄搖 - 周迅
-33. [Tango] Tango - 《Tango》Ferrum Noctis〈32BPM〉
-34. [Rumba] Rumba - Consuelo Velázquez - Bésame Mucho  Cover  Alexandra Ilieva & Family  Thomann
-35. [Waltz] Waltz - Valzer Lento - Schwarzer Walzer (from  Der Alte)
-============================================================
-
-OPTIONS:
- - Type '23-46' to swap song #23 and #46
- - Press ENTER to Accept and Start Generation
-
-> 
 
 ========================================
 📊 FINAL STATISTICS (35 songs)
