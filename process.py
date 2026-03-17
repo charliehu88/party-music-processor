@@ -384,10 +384,17 @@ def create_media(source_dir, output_dir, mp3_filename, index, cover_img_path, se
     output_mp4_name = f"{index:02d}_{mp3_filename.replace('.mp3', '.mp4').replace(' ','_')}"
     output_mp4_path = os.path.join(output_dir, output_mp4_name)
     
-    cmd = ['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error', '-loop', '1', 
-           '-i', cover_img_path, '-i', temp_wav_path, '-c:v', 'libx264', 
-           '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-c:a', 'aac', 
-           '-b:a', '256k', '-shortest', output_mp4_path]
+    # Calculate exact duration to prevent A/V drift during concatenation
+    duration_sec = len(final_audio) / 1000.0
+    
+    cmd = ['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error', 
+           '-loop', '1', '-framerate', '30', '-i', cover_img_path, 
+           '-i', temp_wav_path, 
+           '-filter_complex', '[1:a]apad[A]',
+           '-map', '0:v', '-map', '[A]',
+           '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', 
+           '-c:a', 'aac', '-b:a', '256k', 
+           '-t', str(duration_sec), output_mp4_path]
     subprocess.run(cmd)
     os.remove(temp_wav_path)
 
