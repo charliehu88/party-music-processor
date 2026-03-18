@@ -394,6 +394,7 @@ def create_media(source_dir, output_dir, mp3_filename, index, cover_img_path, se
            '-map', '0:v', '-map', '[A]',
            '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', 
            '-c:a', 'aac', '-b:a', '256k', 
+           '-ar', '44100', '-ac', '2',
            '-t', str(duration_sec), output_mp4_path]
     subprocess.run(cmd)
     os.remove(temp_wav_path)
