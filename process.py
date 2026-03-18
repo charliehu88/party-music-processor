@@ -335,8 +335,21 @@ def extract_metadata(filename):
 def generate_dynamic_cover(current_meta, next_meta, output_img_path):
     FONT_PATH = "./NotoSansSC-VariableFont_wght.ttf"
     W, H = 1280, 720
-    img = Image.new('RGB', (W, H), color=(20, 20, 30))
+    img = Image.new('RGB', (W, H))
     draw = ImageDraw.Draw(img)
+    
+    # 1. Create a beautiful dark gradient background (Midnight Blue to Deep Purple)
+    for y in range(H):
+        r = int(15 + (45 - 15) * (y / H))
+        g = int(10 + (20 - 10) * (y / H))
+        b = int(35 + (70 - 35) * (y / H))
+        draw.line([(0, y), (W, y)], fill=(r, g, b))
+        
+    # 2. Add subtle abstract decorative circles to give it a "party/dance" vibe
+    draw.ellipse((800, -100, 1400, 500), outline=(60, 40, 90), width=10)
+    draw.ellipse((900, 100, 1300, 500), outline=(50, 30, 80), width=5)
+    draw.ellipse((-200, 400, 300, 900), outline=(30, 40, 80), width=8)
+
     try:
         font_xl = ImageFont.truetype(FONT_PATH, 80)
         font_l = ImageFont.truetype(FONT_PATH, 60)
@@ -352,13 +365,15 @@ def generate_dynamic_cover(current_meta, next_meta, output_img_path):
     
     draw.text((100, 150), "NOW PLAYING:", font=font_m, fill=c_label)
     draw.text((100, 200), current_meta['type'], font=font_xl, fill=c_dance)
-    draw.text((100, 300), current_meta['name'], font=font_l, fill=c_song)
+    draw.text((100, 300), current_meta['name'], font=font_m, fill=c_song)
     
     if next_meta:
-        draw.line((50, 450, W-50, 450), fill=(50, 50, 70), width=3)
-        draw.text((100, 480), "COMING UP NEXT:", font=font_s, fill=c_label)
-        next_text = f"{next_meta['type']} - {next_meta['name']}"
-        draw.text((100, 530), next_text, font=font_m, fill=(200, 200, 200))
+        draw.line((50, 450, W-50, 450), fill=(80, 80, 110), width=3)
+        c_next_label = (255, 105, 180) # Vibrant Hot Pink
+        draw.text((100, 480), "COMING UP NEXT:", font=font_m, fill=c_next_label)
+        c_next = (0, 255, 255) # Pure Neon Cyan
+        draw.text((100, 530), next_meta['type'], font=font_l, fill=c_next)
+        draw.text((100, 610), next_meta['name'], font=font_s, fill=c_song)
         
     img.save(output_img_path)
 
