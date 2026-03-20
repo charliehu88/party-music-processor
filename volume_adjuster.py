@@ -45,7 +45,7 @@ def adjust_volume(source_path, db_adjustment):
         print("❌ Error: FFmpeg is not installed or not in your PATH.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Adjust music volume (loudness) in decibels (dB).")
+    parser = argparse.ArgumentParser(description="Adjust music volume (loudness) in decibels (dB).", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     # Arguments
     parser.add_argument("--source", required=True, help="Path to the mp3 file")

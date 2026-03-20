@@ -56,7 +56,7 @@ def adjust_speed(source_path, adjustment_percent):
         print("❌ Error: FFmpeg is not installed or not in your PATH.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Adjust music speed without changing pitch.")
+    parser = argparse.ArgumentParser(description="Adjust music speed without changing pitch.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     # Required Named Arguments
     parser.add_argument("--source", required=True, help="Path to the mp3 file")

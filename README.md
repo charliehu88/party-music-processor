@@ -26,6 +26,7 @@ party-music-processor/
 ├── speed_adjuster.py      # Utility: Adjusts audio/video speed
 ├── volume_adjuster.py     # Utility: Adjusts audio volume
 ├── video_splitter.py      # Utility: Splits video files
+├── music_identify.py      # Utility: Identifies and renames music files via Shazam
 ├── split_manual.py        # Utility: Manual splitting utility
 ├── converter.py           # Utility: Format conversion tool
 ├── dance_config.json      # Dance styles and weights
@@ -41,7 +42,8 @@ party-music-processor/
 You must have `ffmpeg` (for video) and `yt-dlp` (for downloading music) installed.
 
 ```bash
-brew install ffmpeg yt-dlp
+brew install ffmpeg yt-dlp rust libsoup
+cargo install songrec --no-default-features
 
 ```
 
