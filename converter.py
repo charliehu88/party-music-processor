@@ -150,7 +150,7 @@ def convert_media(source_dir, target_dir, mode):
     print(f"📂 Output: {target_dir}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Batch convert MP3 <-> MP4")
+    parser = argparse.ArgumentParser(description="Batch convert MP3 <-> MP4", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--source", "-s", required=True, help="Source Directory")
     parser.add_argument("--target", "-t", help="Target Directory")
     parser.add_argument("--mode", "-m", required=True, choices=['mp4_to_mp3', 'mp3_to_mp4'], help="Mode")

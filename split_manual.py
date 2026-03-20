@@ -103,7 +103,7 @@ def split_video(url, text_file, prefix=None, output_folder="manual_splits"):
     print(f"\n🎉 Done! Check folder: {output_folder}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Manually split a video using a text file of timestamps.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("url", help="YouTube URL")
     parser.add_argument("textfile", help="File containing the copy-pasted description")
     parser.add_argument("--prefix", "-p", help="Prefix (e.g. 'Waltz')")

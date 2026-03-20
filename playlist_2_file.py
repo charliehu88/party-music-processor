@@ -51,7 +51,7 @@ def detect_dance_type(title, description=""):
     return "Unknown"
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract YouTube playlist videos to a downloads.txt-style file.")
+    parser = argparse.ArgumentParser(description="Extract YouTube playlist videos to a downloads.txt-style file.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--playlist", "-p", required=True, help="YouTube playlist URL")
     parser.add_argument("--file", "-f", required=True, help="Output file path")
 

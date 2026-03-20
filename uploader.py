@@ -17,7 +17,7 @@ FFMPEG_LIST_FILE = "ffmpeg_list.txt"
 def parse_args():
     today = datetime.date.today().strftime('%Y-%m-%d')
     
-    parser = argparse.ArgumentParser(description="Merge MP4s, Upload to YouTube, and add to Playlist.")
+    parser = argparse.ArgumentParser(description="Merge MP4s, Upload to YouTube, and add to Playlist.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     parser.add_argument("--folder", "-i", default="./output_mp4s", 
                         help="Input folder containing the song MP4s (default: ./output_mp4s)")
