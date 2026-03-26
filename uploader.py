@@ -122,12 +122,23 @@ def merge_videos(list_file, output_filename):
 def get_authenticated_service():
     creds = None
     if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        try:
+            creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        except Exception:
+            creds = None # Handle malformed token file
     
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                print("   Refreshing expired token...")
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"   ⚠️ Token refresh failed: {e}. Deleting old token and re-authenticating.")
+                os.remove("token.json")
+                creds = None # Force re-authentication
+        
+        if not creds: # If still no valid credentials, start the auth flow
+            print("   ✨ Please complete the authentication in your browser...")
             flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
                 CLIENT_SECRETS_FILE, SCOPES)
             creds = flow.run_local_server(port=0)
