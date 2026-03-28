@@ -65,7 +65,7 @@ def parse_timestamps_from_text(text, duration):
         valid_chapters[-1]['end_time'] = duration if duration else valid_chapters[-1]['start_time'] + 300
     return valid_chapters
 
-def split_video(url, prefix=None, output_folder="split_output", audio_only=False, textfile=None, auto_silence=False, min_silence=2000, silence_thresh=-40):
+def split_video(url, prefix=None, output_folder="split_output", audio_only=False, textfile=None, auto_silence=False, min_silence=2000, silence_thresh=-40, download_only=False):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -87,12 +87,12 @@ def split_video(url, prefix=None, output_folder="split_output", audio_only=False
         print(f"📄 Reading timestamps from {textfile}...")
         with open(textfile, 'r', encoding='utf-8') as f:
             chapters = parse_timestamps_from_text(f.read(), duration)
-    elif not chapters:
+    elif not chapters and not download_only:
         print("⚠️ No YouTube chapters found. Attempting to parse description...")
         description = info.get('description', '')
         chapters = parse_timestamps_from_text(description, duration)
 
-    if not chapters and not auto_silence:
+    if not chapters and not auto_silence and not download_only:
         print("❌ Error: No chapters found in this video or description. Use --auto-silence to split by audio gaps.")
         return
 
@@ -138,6 +138,16 @@ def split_video(url, prefix=None, output_folder="split_output", audio_only=False
     
     if not os.path.exists(full_file_path):
         print("❌ Error: Could not find downloaded source file.")
+        return
+        
+    if download_only:
+        video_title = info.get('title', 'Downloaded_File')
+        clean_title = sanitize_filename(video_title)
+        final_name = f"{prefix}-{clean_title}{ext}" if prefix else f"{clean_title}{ext}"
+        final_name = get_unique_filename(output_folder, final_name)
+        output_path = os.path.join(output_folder, final_name)
+        os.rename(full_file_path, output_path)
+        print(f"✅ Download complete! Saved without splitting to: {output_path}")
         return
 
     if not chapters or auto_silence:
@@ -231,7 +241,8 @@ if __name__ == "__main__":
     parser.add_argument("--auto-silence", "-s", action="store_true", help="Auto-detect song boundaries using silence if no chapters are found")
     parser.add_argument("--min-silence", type=int, default=2000, help="Minimum silence length in ms for auto-split (default: 2000)")
     parser.add_argument("--silence-thresh", type=int, default=-40, help="Silence threshold in dBFS for auto-split (default: -40)")
+    parser.add_argument("--download-only", "-d", action="store_true", help="Download the video/audio only without splitting")
 
     args = parser.parse_args()
     
-    split_video(args.url, args.prefix, args.folder, args.audio, args.textfile, args.auto_silence, args.min_silence, args.silence_thresh)
+    split_video(args.url, args.prefix, args.folder, args.audio, args.textfile, args.auto_silence, args.min_silence, args.silence_thresh, args.download_only)
