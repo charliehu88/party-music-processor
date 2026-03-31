@@ -233,7 +233,7 @@ def main():
         with open(stats_path, 'r', encoding='utf-8') as f:
             stats_content = f.read()
         # Add a separator and the stats content
-        full_description += "\n\n" + stats_content.strip()
+        full_description += "\n\n📊 STATISTICS:\n" + "-" * 20 + "\n" + stats_content.strip()
 
     success = merge_videos(list_file, args.file)
     if not success: return
