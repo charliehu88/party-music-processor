@@ -225,18 +225,29 @@ def main():
     list_file, chapters_desc = generate_merge_assets(args.folder)
     if not list_file: return
 
+    # Append statistics to the description
+    full_description = chapters_desc
+    stats_path = os.path.join(args.folder, "statistics.txt")
+    if os.path.exists(stats_path):
+        print("   Found statistics.txt, appending to description.")
+        with open(stats_path, 'r', encoding='utf-8') as f:
+            stats_content = f.read()
+        # Add a separator and the stats content
+        full_description += "\n\n" + stats_content.strip()
+
     success = merge_videos(list_file, args.file)
     if not success: return
 
     # 2. Authenticate
     try:
+        print("🔐 Authenticating with YouTube...")
         youtube = get_authenticated_service()
     except Exception as e:
         print(f"❌ Auth Error: {e}")
         return
 
     # 3. Upload
-    video_id = upload_video(youtube, args.file, args.title, chapters_desc, args.privacy)
+    video_id = upload_video(youtube, args.file, args.title, full_description, args.privacy)
 
     # 4. Playlist
     playlist_id = get_or_create_playlist(youtube, args.playlist, args.privacy)

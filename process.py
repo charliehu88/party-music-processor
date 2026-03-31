@@ -275,21 +275,29 @@ def print_statistics(playlist, dance_config, args, all_dances):
     seconds = total_seconds % 60
     time_str = f"{hours}h {minutes}m {seconds}s (approx)"
     
-    print("\n" + "="*40)
-    print(f"📊 FINAL STATISTICS ({total} songs)")
-    print(f"   ⏱️  Max Duration: {time_str}")
-    print("-" * 36)
-    print(f"   Standard: {style_counts['Standard']} | Latin: {style_counts['Latin']}")
-    print(f"   Slow: {speed_counts['Slow']} | Quick: {speed_counts['Quick']}")
-    print("="*40)
-    print(f"{'DANCE TYPE':<20} | {'COUNT':<5} | {'%':<5}")
-    print("-" * 36)
+    output_lines = []
+    output_lines.append("\n" + "="*40)
+    output_lines.append(f"📊 FINAL STATISTICS ({total} songs)")
+    output_lines.append(f"   ⏱️  Max Duration: {time_str}")
+    output_lines.append("-" * 36)
+    output_lines.append(f"   Standard: {style_counts['Standard']} | Latin: {style_counts['Latin']}")
+    output_lines.append(f"   Slow: {speed_counts['Slow']} | Quick: {speed_counts['Quick']}")
+    output_lines.append("="*40)
+    output_lines.append("DANCE TYPE BREAKDOWN")
+    output_lines.append("-" * 36)
     
     sorted_stats = sorted(stats.items(), key=lambda x: x[1], reverse=True)
     for dtype, count in sorted_stats:
         percent = (count / total) * 100
-        print(f"{dtype:<20} | {count:<5} | {percent:.1f}%")
-    print("="*40 + "\n")
+        output_lines.append(f"{dtype}: {count} ({percent:.1f}%)")
+    output_lines.append("="*40 + "\n")
+
+    output_text = "\n".join(output_lines)
+    print(output_text)
+
+    stats_file_path = os.path.join(args.output, "statistics.txt")
+    with open(stats_file_path, "w", encoding="utf-8") as f:
+        f.write(output_text)
 
 def get_video_duration(file_path):
     """Get duration of video file in seconds using ffprobe"""
@@ -545,7 +553,12 @@ def main():
         hours = int(total_duration // 3600)
         minutes = int((total_duration % 3600) // 60)
         seconds = int(total_duration % 60)
-        print(f"\n🎵 EXACT PLAYLIST DURATION: {hours}h {minutes}m {seconds}s ({total_duration:.1f} seconds total)")
+        exact_msg = f"\n🎵 EXACT PLAYLIST DURATION: {hours}h {minutes}m {seconds}s ({total_duration:.1f} seconds total)"
+        print(exact_msg)
+        
+        stats_file_path = os.path.join(args.output, "statistics.txt")
+        with open(stats_file_path, "a", encoding="utf-8") as f:
+            f.write(exact_msg + "\n")
     else:
         print("\n⚠️ Could not calculate playlist duration")
 
