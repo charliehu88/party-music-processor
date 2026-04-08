@@ -5,6 +5,7 @@ import subprocess
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
+import re
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.http import MediaFileUpload
@@ -217,6 +218,53 @@ def add_video_to_playlist(youtube, video_id, playlist_id):
     except Exception as e:
         print(f"   ⚠️ Failed to add to playlist: {e}")
 
+def reformat_stats_for_youtube(stats_text):
+    """
+    Parses the space-aligned statistics text from process.py and reformats it
+    into a YouTube-friendly bulleted list that is not dependent on monospaced fonts.
+    """
+    new_lines = []
+
+    # Regex patterns to find the data we need from the header
+    songs_match = re.search(r'FINAL STATISTICS \((\d+) songs\)', stats_text)
+    duration_match = re.search(r'Max Duration: (.*) \(approx\)', stats_text)
+    style_match = re.search(r'Standard: (\d+) \| Latin: (\d+)', stats_text)
+    speed_match = re.search(r'Slow: (\d+) \| Quick: (\d+)', stats_text)
+    exact_duration_match = re.search(r'🎵 EXACT PLAYLIST DURATION: (.*)', stats_text)
+
+    # Add exact duration first if it exists
+    if exact_duration_match:
+        new_lines.append(f"🎵 Exact Duration: {exact_duration_match.group(1).strip()}\n")
+
+    new_lines.append("📊 Playlist Statistics")
+    new_lines.append("======================")
+    
+    if songs_match:
+        new_lines.append(f"Total Songs: {songs_match.group(1)}")
+    if duration_match:
+        new_lines.append(f"Approx. Duration: {duration_match.group(1)}")
+    if style_match:
+        new_lines.append(f"Standard/Latin Ratio: {style_match.group(1)} / {style_match.group(2)}")
+    if speed_match:
+        new_lines.append(f"Slow/Quick Ratio: {speed_match.group(1)} / {speed_match.group(2)}")
+        
+    new_lines.append("\n📋 Dance Type Breakdown:")
+    
+    in_table = False
+    for line in stats_text.strip().split('\n'):
+        if 'DANCE TYPE' in line and 'COUNT' in line and '%' in line:
+            in_table = True
+            continue
+        if in_table and line.startswith('='):
+            break
+        if in_table and '|' in line and not line.startswith('-'):
+            parts = [p.strip() for p in line.split('|')]
+            if len(parts) == 3 and parts[0]:
+                dtype, count, percent = parts
+                new_lines.append(f"• {dtype}: {count} songs ({percent})")
+
+    return "\n".join(new_lines)
+
 def main():
     args = parse_args()
 
@@ -225,18 +273,30 @@ def main():
     list_file, chapters_desc = generate_merge_assets(args.folder)
     if not list_file: return
 
+    # Append statistics to the description
+    full_description = chapters_desc
+    stats_path = os.path.join(args.folder, "statistics.txt")
+    if os.path.exists(stats_path):
+        print("   Found statistics.txt, reformatting for YouTube description.")
+        with open(stats_path, 'r', encoding='utf-8') as f:
+            stats_content = f.read()
+        
+        youtube_friendly_stats = reformat_stats_for_youtube(stats_content)
+        full_description += "\n\n" + youtube_friendly_stats
+
     success = merge_videos(list_file, args.file)
     if not success: return
 
     # 2. Authenticate
     try:
+        print("🔐 Authenticating with YouTube...")
         youtube = get_authenticated_service()
     except Exception as e:
         print(f"❌ Auth Error: {e}")
         return
 
     # 3. Upload
-    video_id = upload_video(youtube, args.file, args.title, chapters_desc, args.privacy)
+    video_id = upload_video(youtube, args.file, args.title, full_description, args.privacy)
 
     # 4. Playlist
     playlist_id = get_or_create_playlist(youtube, args.playlist, args.privacy)
