@@ -283,14 +283,24 @@ def print_statistics(playlist, dance_config, args, all_dances):
     output_lines.append(f"   Standard: {style_counts['Standard']} | Latin: {style_counts['Latin']}")
     output_lines.append(f"   Slow: {speed_counts['Slow']} | Quick: {speed_counts['Quick']}")
     output_lines.append("="*40)
-    output_lines.append("DANCE TYPE BREAKDOWN")
+    output_lines.append(f"{'DANCE TYPE':<20} | {'COUNT':<5} | {'%':<5}")
     output_lines.append("-" * 36)
     
     sorted_stats = sorted(stats.items(), key=lambda x: x[1], reverse=True)
     for dtype, count in sorted_stats:
         percent = (count / total) * 100
-        output_lines.append(f"{dtype}: {count} ({percent:.1f}%)")
+        output_lines.append(f"{dtype:<20} | {count:<5} | {percent:.1f}%")
     output_lines.append("="*40 + "\n")
+
+    # Generate Playlist Order matching your preferred format
+    output_lines.append("===========================================================")
+    output_lines.append("📝 PLAYLIST ORDER")
+    output_lines.append("===========================================================")
+    for i, song in enumerate(playlist):
+        dtype = get_dance_type(song['filename'], all_dances)
+        clean_name = os.path.splitext(song['filename'])[0].strip()
+        output_lines.append(f"{i+1:02d}. [{dtype}] {clean_name}")
+    output_lines.append("===========================================================\n")
 
     output_text = "\n".join(output_lines)
     print(output_text)
