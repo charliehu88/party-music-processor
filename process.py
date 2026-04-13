@@ -369,29 +369,30 @@ def generate_dynamic_cover(current_meta, next_meta, output_img_path):
     draw.ellipse((-200, 400, 300, 900), outline=(30, 40, 80), width=8)
 
     try:
-        font_xl = ImageFont.truetype(FONT_PATH, 80)
+        font_xxl = ImageFont.truetype(FONT_PATH, 150)
+        font_xl = ImageFont.truetype(FONT_PATH, 110)
         font_l = ImageFont.truetype(FONT_PATH, 60)
-        font_m = ImageFont.truetype(FONT_PATH, 40)
-        font_s = ImageFont.truetype(FONT_PATH, 30)
+        font_m = ImageFont.truetype(FONT_PATH, 45)
+        font_s = ImageFont.truetype(FONT_PATH, 40)
     except IOError:
         print("⚠️ Font not found! Falling back to default.")
-        font_xl = font_l = font_m = font_s = ImageFont.load_default()
+        font_xxl = font_xl = font_l = font_m = font_s = ImageFont.load_default()
         
     c_label = (180, 180, 180)
     c_dance = (255, 215, 0)
     c_song = (255, 255, 255)
     
-    draw.text((100, 150), "NOW PLAYING:", font=font_m, fill=c_label)
-    draw.text((100, 200), current_meta['type'], font=font_xl, fill=c_dance)
-    draw.text((100, 300), current_meta['name'], font=font_m, fill=c_song)
+    draw.text((100, 100), "NOW PLAYING:", font=font_m, fill=c_label)
+    draw.text((100, 160), current_meta['type'], font=font_xxl, fill=c_dance)
+    draw.text((100, 340), current_meta['name'], font=font_l, fill=c_song)
     
     if next_meta:
-        draw.line((50, 450, W-50, 450), fill=(80, 80, 110), width=3)
+        draw.line((50, 440, W-50, 440), fill=(80, 80, 110), width=3)
         c_next_label = (255, 105, 180) # Vibrant Hot Pink
-        draw.text((100, 480), "COMING UP NEXT:", font=font_m, fill=c_next_label)
+        draw.text((100, 470), "COMING UP NEXT:", font=font_m, fill=c_next_label)
         c_next = (0, 255, 255) # Pure Neon Cyan
-        draw.text((100, 530), next_meta['type'], font=font_l, fill=c_next)
-        draw.text((100, 610), next_meta['name'], font=font_s, fill=c_song)
+        draw.text((100, 530), next_meta['type'], font=font_xl, fill=c_next)
+        draw.text((100, 650), next_meta['name'], font=font_s, fill=c_song)
         
     img.save(output_img_path)
 
