@@ -19,8 +19,8 @@ def parse_args():
         description="Generate a Dance Party Video Playlist",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("--source", "-s", default="./input_mp3s", help="Path to source MP3s")
-    parser.add_argument("--favorite", "-f", help="Path to favorite MP3s directory (prioritized)")
+    parser.add_argument("--source", "-s", default="./input_mp3s_m4as", help="Path to source audio files (MP3s, M4As)")
+    parser.add_argument("--favorite", "-f", help="Path to favorite audio files directory (prioritized)")
     parser.add_argument("--output", "-o", default="./output_mp4s", help="Path to output folder")
     parser.add_argument("--config", "-cfg", default="dance_config.json", help="Path to weights JSON")
     parser.add_argument("--count", "-c", type=int, default=20, help="Number of songs")
@@ -70,7 +70,7 @@ def parse_libraries(source_dir, favorite_dir, all_dances):
             return 0
         count = 0
         for filename in os.listdir(dir_path):
-            if not filename.lower().endswith(".mp3"):
+            if not filename.lower().endswith((".mp3", ".m4a")):
                 continue
                 
             dtype = get_dance_type(filename, all_dances)
@@ -396,11 +396,11 @@ def generate_dynamic_cover(current_meta, next_meta, output_img_path):
         
     img.save(output_img_path)
 
-def create_media(source_dir, output_dir, mp3_filename, index, cover_img_path, settings, export_mp3_path=None):
-    input_mp3_path = os.path.join(source_dir, mp3_filename)
+def create_media(source_dir, output_dir, audio_filename, index, cover_img_path, settings, export_mp3_path=None):
+    input_audio_path = os.path.join(source_dir, audio_filename)
     temp_wav_path = os.path.join(output_dir, f"temp_{index}.wav")
     
-    audio = AudioSegment.from_mp3(input_mp3_path)
+    audio = AudioSegment.from_file(input_audio_path)
     audio = effects.normalize(audio)
     audio = strip_trailing_silence(audio)
     
@@ -415,7 +415,7 @@ def create_media(source_dir, output_dir, mp3_filename, index, cover_img_path, se
     if export_mp3_path:
         final_audio.export(export_mp3_path, format="mp3")
         
-    output_mp4_name = f"{index:02d}_{mp3_filename.replace('.mp3', '.mp4').replace(' ','_')}"
+    output_mp4_name = f"{index:02d}_{os.path.splitext(audio_filename)[0].replace(' ','_')}.mp4"
     output_mp4_path = os.path.join(output_dir, output_mp4_name)
     
     # Calculate exact duration to prevent A/V drift during concatenation
@@ -517,8 +517,8 @@ def main():
     
     for i, song in enumerate(master_playlist):
         seq_index = i + 1
-        mp3_filename = song['filename']
-        dtype = get_dance_type(mp3_filename, all_dances)
+        audio_filename = song['filename']
+        dtype = get_dance_type(audio_filename, all_dances)
         
         # Fetch dynamic settings from JSON
         info = dance_config.get(dtype, {})
@@ -536,7 +536,7 @@ def main():
             'silence_ms': args.silence * 1000
         }
         
-        current_meta = extract_metadata(mp3_filename)
+        current_meta = extract_metadata(audio_filename)
         next_meta = None
         if i + 1 < len(master_playlist):
             next_song = master_playlist[i+1]
@@ -548,10 +548,11 @@ def main():
         
         mp3_out_path = None
         if args.mp3:
-            clean_name = f"{seq_index:02d}_{mp3_filename.replace(' ','_')}"
+            # Use the same robust naming as MP4s, but change the extension
+            clean_name = f"{seq_index:02d}_{os.path.splitext(audio_filename)[0].replace(' ','_')}.mp3"
             mp3_out_path = os.path.join(args.output_mp3, clean_name)
             
-        create_media(song['dir'], args.output, mp3_filename, seq_index, temp_img_path, track_settings, mp3_out_path)
+        create_media(song['dir'], args.output, audio_filename, seq_index, temp_img_path, track_settings, mp3_out_path)
         os.remove(temp_img_path)
         
     print(f"\nDone! Videos located in: {args.output}")
