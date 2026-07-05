@@ -2,7 +2,7 @@
 ```markdown
 # Dance Party Playlist Generator
 
-A Python automation tool for ballroom dance hosts. This tool transforms a local collection of MP3s into a sequence of YouTube-ready MP4 videos.
+A Python automation tool for ballroom dance hosts. This tool transforms a local collection of audio files (MP3s, M4As) into a sequence of YouTube-ready MP4 videos.
 
 It automates the DJ process by:
 1. **Sequencing:** Alternating between "Quick" and "Slow" dances based on configurable logic.
@@ -14,8 +14,8 @@ It automates the DJ process by:
 
 ```text
 party-music-processor/
-├── assets/
-├── input_mp3s/            # Drop your source music here
+├── assets/                # (Not used by default)
+├── input_mp3s_m4as/       # Drop your source audio files here
 ├── output_mp4s/           # Generated video files appear here
 ├── .venv/                 # Python virtual environment
 ├── NotoSansSC-VariableFont_wght.ttf  # Font for video overlays
@@ -103,7 +103,7 @@ This tool analyzes each video's title and description to detect dance types (e.g
 **Option C: Manual Download**
 
 ```bash
-yt-dlp -x --audio-format mp3 -o "input_mp3s/DanceType - SongName.%(ext)s" "YOUTUBE_URL"
+yt-dlp -x --audio-format best -o "input_mp3s_m4as/DanceType - SongName.%(ext)s" "YOUTUBE_URL"
 
 ```
 
