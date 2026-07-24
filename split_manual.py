@@ -3,6 +3,33 @@ import os
 import re
 import subprocess
 import yt_dlp
+import hashlib
+
+# File to store IDs of items we have already processed
+HISTORY_FILE = "download_history.log"
+
+def load_history():
+    """Loads the set of previously processed item IDs."""
+    if not os.path.exists(HISTORY_FILE):
+        return set()
+    with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+        return set(line.strip() for line in f if line.strip())
+
+def update_history(item_id):
+    """Appends a new ID to the history file."""
+    with open(HISTORY_FILE, 'a', encoding='utf-8') as f:
+        f.write(item_id + "\n")
+
+def get_file_hash(filepath):
+    """Computes the SHA256 hash of a file's content."""
+    if not os.path.exists(filepath):
+        return "file_not_found"
+    
+    hasher = hashlib.sha256()
+    with open(filepath, 'rb') as f:
+        while chunk := f.read(4096):
+            hasher.update(chunk)
+    return hasher.hexdigest()
 
 def parse_timestamps(text_file):
     """Parses lines like '02:39 02 Midnight in London' into a list."""
@@ -107,6 +134,27 @@ if __name__ == "__main__":
     parser.add_argument("url", help="YouTube URL")
     parser.add_argument("textfile", help="File containing the copy-pasted description")
     parser.add_argument("--prefix", "-p", help="Prefix (e.g. 'Waltz')")
+    parser.add_argument("--force", action="store_true", help="Ignore history and force re-processing")
     args = parser.parse_args()
+
+    # --- History Check ---
+    history = load_history()
     
-    split_video(args.url, args.textfile, args.prefix)
+    # Create a unique ID for this specific job
+    text_file_hash = get_file_hash(args.textfile)
+    job_id = f"split_manual|{args.url}|{text_file_hash}"
+
+    if not args.force and job_id in history:
+        print(f"⏭️  Skipping (Already in history): {args.url} with {os.path.basename(args.textfile)}")
+        exit()
+    # --- End History Check ---
+
+    try:
+        split_video(args.url, args.textfile, args.prefix)
+        
+        # If successful, save to history
+        update_history(job_id)
+        print(f"✅ Success. Added to history: {job_id}")
+
+    except Exception as e:
+        print(f"❌ An error occurred during splitting: {e}")

@@ -4,6 +4,33 @@ import sys
 import subprocess
 import re
 import yt_dlp
+import hashlib
+
+# File to store IDs of items we have already processed
+HISTORY_FILE = "download_history.log"
+
+def load_history():
+    """Loads the set of previously processed item IDs."""
+    if not os.path.exists(HISTORY_FILE):
+        return set()
+    with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+        return set(line.strip() for line in f if line.strip())
+
+def update_history(item_id):
+    """Appends a new ID to the history file."""
+    with open(HISTORY_FILE, 'a', encoding='utf-8') as f:
+        f.write(item_id + "\n")
+
+def get_file_hash(filepath):
+    """Computes the SHA256 hash of a file's content."""
+    if not os.path.exists(filepath):
+        return "file_not_found"
+    
+    hasher = hashlib.sha256()
+    with open(filepath, 'rb') as f:
+        while chunk := f.read(4096):
+            hasher.update(chunk)
+    return hasher.hexdigest()
 
 def sanitize_filename(name):
     """Removes illegal characters from filenames."""
@@ -242,7 +269,40 @@ if __name__ == "__main__":
     parser.add_argument("--min-silence", type=int, default=2000, help="Minimum silence length in ms for auto-split (default: 2000)")
     parser.add_argument("--silence-thresh", type=int, default=-40, help="Silence threshold in dBFS for auto-split (default: -40)")
     parser.add_argument("--download-only", "-d", action="store_true", help="Download the video/audio only without splitting")
+    parser.add_argument("--force", action="store_true", help="Ignore history and force re-processing")
 
     args = parser.parse_args()
+
+    # --- History Check ---
+    history = load_history()
     
-    split_video(args.url, args.prefix, args.folder, args.audio, args.textfile, args.auto_silence, args.min_silence, args.silence_thresh, args.download_only)
+    # Create a unique ID for this specific job
+    base_id = f"video_splitter|{args.url}|{args.prefix or ''}"
+    
+    if args.download_only:
+        mode_id = "download_only"
+    elif args.textfile:
+        mode_id = f"textfile|{get_file_hash(args.textfile)}"
+    elif args.auto_silence:
+        mode_id = f"silence|{args.min_silence}|{args.silence_thresh}"
+    else:
+        mode_id = "chapters"
+        
+    job_id = f"{base_id}|{mode_id}|audio_only={args.audio}"
+
+    if not args.force and job_id in history:
+        print(f"⏭️  Skipping (Already in history): {args.url} with mode {mode_id}")
+        exit()
+    # --- End History Check ---
+    
+    try:
+        split_video(args.url, args.prefix, args.folder, args.audio, args.textfile, args.auto_silence, args.min_silence, args.silence_thresh, args.download_only)
+        
+        # If successful, save to history
+        update_history(job_id)
+        print(f"✅ Success. Added to history: {job_id}")
+
+    except Exception as e:
+        print(f"❌ An error occurred during splitting: {e}")
+        # Optionally, re-raise the exception if you want to see a full traceback
+        # raise

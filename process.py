@@ -20,7 +20,7 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--source", "-s", default="./input_mp3s_m4as", help="Path to source audio files (MP3s, M4As)")
-    parser.add_argument("--favorite", "-f", help="Path to favorite audio files directory (prioritized)")
+    parser.add_argument("--favorite", "-f", help="Path to favorite audio files directory or a file containing a list of favorite song paths (prioritized)")
     parser.add_argument("--output", "-o", default="./output_mp4s", help="Path to output folder")
     parser.add_argument("--config", "-cfg", default="dance_config.json", help="Path to weights JSON")
     parser.add_argument("--count", "-c", type=int, default=20, help="Number of songs")
@@ -62,7 +62,7 @@ def get_dance_type(filename, all_dances):
         return match.group(1).title()
     return None
 
-def parse_libraries(source_dir, favorite_dir, all_dances):
+def parse_libraries(source_dir, favorite_path, all_dances):
     library = {}
     
     def add_songs_from_dir(dir_path, is_favorite):
@@ -89,11 +89,61 @@ def parse_libraries(source_dir, favorite_dir, all_dances):
                 count += 1
         return count
     
+    def add_songs_from_file(file_path, is_favorite):
+        if not os.path.isfile(file_path):
+            return 0
+        count = 0
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                song_path = line.strip()
+                if not song_path or song_path.startswith('#'):
+                    continue
+                
+                # Handle quotes and user home directory (e.g. ~/music/"file.mp3")
+                song_path = os.path.expanduser(song_path.strip().replace('"', ''))
+
+                if not os.path.exists(song_path):
+                    print(f"Warning: Favorite song not found: {song_path}")
+                    continue
+
+                dir_path, filename = os.path.split(song_path)
+
+                if not filename.lower().endswith((".mp3", ".m4a")):
+                    continue
+                    
+                dtype = get_dance_type(filename, all_dances)
+                if not dtype:
+                    print(f"Warning: Could not determine dance type for favorite song: {filename}")
+                    continue
+                    
+                if dtype not in library:
+                    library[dtype] = []
+                # Avoid duplicates by filename
+                if not any(song['filename'] == filename for song in library[dtype]):
+                    library[dtype].append({
+                        'filename': filename,
+                        'dir': dir_path,
+                        'is_favorite': is_favorite
+                    })
+                    count += 1
+        return count
+    
     total_count = 0
-    if favorite_dir:
-        fav_count = add_songs_from_dir(favorite_dir, True)
-        print(f"Parsed {fav_count} favorite songs.")
-        total_count += fav_count
+    if favorite_path:
+        fav_count = 0
+        if os.path.isdir(favorite_path):
+            fav_count = add_songs_from_dir(favorite_path, True)
+        elif os.path.isfile(favorite_path):
+            fav_count = add_songs_from_file(favorite_path, True)
+        else:
+            # Only print warning if path was given but not found
+            if not os.path.exists(favorite_path):
+                 print(f"Warning: Favorite path '{favorite_path}' not found.")
+
+        if fav_count > 0:
+            print(f"Parsed {fav_count} favorite songs.")
+            total_count += fav_count
+
     src_count = add_songs_from_dir(source_dir, False)
     print(f"Parsed {src_count} source songs.")
     total_count += src_count
