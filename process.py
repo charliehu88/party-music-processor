@@ -508,48 +508,57 @@ def main():
 
     # --- 2. SELECT SONGS ---
     drafted_songs = []
-    used_songs_tracker = {}
+    # Create a mutable pool of available songs, separating favs and non-favs
+    fav_pool = {dtype: [s for s in songs if s['is_favorite']] for dtype, songs in library.items()}
+    non_fav_pool = {dtype: [s for s in songs if not s['is_favorite']] for dtype, songs in library.items()}
+    for p in fav_pool.values(): random.shuffle(p)
+    for p in non_fav_pool.values(): random.shuffle(p)
     
+    # Fulfill quotas as best as possible
     for dtype, count in quotas.items():
         if count == 0:
             continue
         print(f"  - {dtype}: {count}")
-        candidates = library[dtype]
         
-        if dtype not in used_songs_tracker:
-            used_songs_tracker[dtype] = set()
-            
-        picked = []
-        favorites = [c for c in candidates if c['is_favorite']]
-        non_favorites = [c for c in candidates if not c['is_favorite']]
-        
-        # Shuffle both lists
-        random.shuffle(favorites)
-        random.shuffle(non_favorites)
+        picked_for_type = []
         
         # Pick from favorites first
-        while len(picked) < count and favorites:
-            picked.append(favorites.pop())
+        while len(picked_for_type) < count and fav_pool.get(dtype):
+            picked_for_type.append(fav_pool[dtype].pop(0))
         
         # Then from non-favorites
-        while len(picked) < count and non_favorites:
-            picked.append(non_favorites.pop())
+        while len(picked_for_type) < count and non_fav_pool.get(dtype):
+            picked_for_type.append(non_fav_pool[dtype].pop(0))
+        
+        if len(picked_for_type) < count:
+            print(f"Warning: Not enough unique songs for {dtype}. Repeating to meet quota.")
+            # All unique songs for this type have been used.
+            # The pool of candidates for repetition is the entire library for this type.
+            repeatable_candidates = library.get(dtype, [])
+            if repeatable_candidates:
+                needed = count - len(picked_for_type)
+                # random.choices allows for replacement, which is what we want.
+                repeated_picks = random.choices(repeatable_candidates, k=needed)
+                picked_for_type.extend(repeated_picks)
+            else:
+                # This case should not be reachable due to how quotas are calculated.
+                print(f"Error: No songs found for {dtype} at all, cannot meet quota.")
             
-        drafted_songs.extend(picked)
+        drafted_songs.extend(picked_for_type)
 
     # --- 3. RESERVE LAST DANCE ---
     reserved_last = None
-    for i, song in enumerate(drafted_songs):
-        if get_dance_type(song['filename'], all_dances).lower() == 'waltz':
-            reserved_last = drafted_songs.pop(i)
-            print(f"💾 Reserved Last Dance: {reserved_last['filename']}")
-            break
-            
-    if not reserved_last and 'Waltz' in library and library['Waltz']:
-        reserved_last = random.choice(library['Waltz'])
-        if drafted_songs:
-            drafted_songs.pop()
-        print(f"💾 Forced Last Dance: {reserved_last['filename']}")
+    is_waltz_in_config = dance_config.get('Waltz', {}).get('weight', 0) > 0
+    
+    if is_waltz_in_config:
+        # Find a waltz in the drafted songs to reserve for the end
+        waltz_indices = [i for i, song in enumerate(drafted_songs) if get_dance_type(song['filename'], all_dances).lower() == 'waltz']
+        if waltz_indices:
+            # Pick one of the drafted waltzes to be the last dance
+            idx_to_pop = random.choice(waltz_indices)
+            reserved_last = drafted_songs.pop(idx_to_pop)
+            if reserved_last:
+                print(f"💾 Reserved Last Dance: {reserved_last['filename']}")
 
     # --- 4. ARRANGE ---
     master_playlist = arrange_abundance_aware(drafted_songs, dance_config, all_dances)
