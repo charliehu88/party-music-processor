@@ -7,6 +7,7 @@ import sys
 import json
 import math
 import time
+import numpy as np
 from pydub import AudioSegment, effects
 from PIL import Image, ImageDraw, ImageFont
 
@@ -32,7 +33,7 @@ def parse_args():
     # Audio Params
     parser.add_argument("--length-quick", type=int, default=150, help="Max length Quick (s)")
     parser.add_argument("--length-slow", type=int, default=180, help="Max length Slow (s)")
-    parser.add_argument("--fade", type=int, default=3, help="Fade out (s)")
+    parser.add_argument("--fade", type=float, default=3, help="Fade out (s), smooth volume ramp at the end of each track")
     parser.add_argument("--silence", type=int, default=8, help="Silence (s)")
     return parser.parse_args()
 
@@ -273,6 +274,51 @@ def interactive_swap(playlist, all_dances):
         else:
             print("\n❌ Invalid command.")
 
+# --- SMOOTH FADE ---
+# How far down the fade travels before the final taper to true silence.
+# Sets the perceived steepness: -50 dB over 3s ≈ 17 dB/s, over 6s ≈ 8 dB/s.
+FADE_FLOOR_DB = -50.0
+
+def smooth_fade_out(audio_segment, fade_ms, floor_db=FADE_FLOOR_DB):
+    """
+    Fade out over the full requested duration, sample by sample.
+
+    pydub's built-in fade_out() ramps amplitude linearly, so the level is still
+    only ~6 dB down at the halfway point and then collapses in the last few
+    hundred ms - it sounds like a short dip followed by a hard stop, and the
+    shape is identical no matter how long the fade is. This instead ramps the
+    fade in *decibels* (what the ear actually tracks), so the volume slides
+    down steadily for the whole --fade window and a longer fade audibly is a
+    gentler one. The trailing (1 - t) factor lands on true digital silence so
+    there is no click at the cut.
+    """
+    fade_ms = int(round(fade_ms))
+    if fade_ms <= 0 or len(audio_segment) == 0:
+        return audio_segment
+
+    fade_ms = min(fade_ms, len(audio_segment))
+    head = audio_segment[:len(audio_segment) - fade_ms]
+    tail = audio_segment[len(audio_segment) - fade_ms:]
+
+    samples = tail.get_array_of_samples()
+    channels = max(1, tail.channels)
+    frames = len(samples) // channels
+    if frames < 2:
+        return audio_segment
+
+    dtype = np.dtype(samples.typecode)
+    data = np.array(samples, dtype=np.float64)
+
+    t = np.linspace(0.0, 1.0, frames, endpoint=True)
+    curve = (10.0 ** (floor_db * t / 20.0)) * (1.0 - t)
+    if channels > 1:
+        curve = np.repeat(curve, channels)
+
+    limits = np.iinfo(dtype)
+    faded = np.clip(np.rint(data * curve), limits.min, limits.max).astype(dtype)
+
+    return head + tail._spawn(faded.tobytes())
+
 # --- SILENCE STRIPPER ---
 def strip_trailing_silence(audio_segment, silence_threshold=-45.0, chunk_size=50):
     reversed_audio = audio_segment.reverse()
@@ -457,7 +503,7 @@ def create_media(source_dir, output_dir, audio_filename, index, cover_img_path, 
     if len(audio) > settings['length_ms']:
         audio = audio[:settings['length_ms']]
         
-    audio = audio.fade_out(settings['fade_ms'])
+    audio = smooth_fade_out(audio, settings['fade_ms'])
     silence = AudioSegment.silent(duration=settings['silence_ms'])
     final_audio = audio + silence
     
