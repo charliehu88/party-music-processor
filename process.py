@@ -20,7 +20,7 @@ def parse_args():
         description="Generate a Dance Party Video Playlist",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("--source", "-s", default="./input_mp3s_m4as", help="Path to source audio files (MP3s, M4As)")
+    parser.add_argument("--source", "-s", default="~/music_dir/general-music-pool/input_mp3s_m4as", help="Path to source audio files (MP3s, M4As)")
     parser.add_argument("--favorite", "-f", help="Path to favorite audio files directory or a file containing a list of favorite song paths (prioritized)")
     parser.add_argument("--output", "-o", default="./output_mp4s", help="Path to output folder")
     parser.add_argument("--config", "-cfg", default="dance_config.json", help="Path to weights JSON")
@@ -33,9 +33,17 @@ def parse_args():
     # Audio Params
     parser.add_argument("--length-quick", type=int, default=150, help="Max length Quick (s)")
     parser.add_argument("--length-slow", type=int, default=180, help="Max length Slow (s)")
-    parser.add_argument("--fade", type=float, default=3, help="Fade out (s), smooth volume ramp at the end of each track")
-    parser.add_argument("--silence", type=int, default=8, help="Silence (s)")
-    return parser.parse_args()
+    parser.add_argument("--fade", type=float, default=5, help="Fade out (s), added on top of the dance length rather than taken out of it")
+    parser.add_argument("--fade-curve", type=float, default=FADE_CURVE,
+                        help="Fade shape: 1.0 drops fast right away, higher stays near full volume longer before easing down")
+    parser.add_argument("--silence", type=int, default=6, help="Silence (s)")
+
+    args = parser.parse_args()
+    # argparse leaves "~" as a literal, and the default source lives under $HOME
+    args.source = os.path.expanduser(args.source)
+    if args.favorite:
+        args.favorite = os.path.expanduser(args.favorite)
+    return args
 
 def load_config(config_path):
     if not os.path.exists(config_path):
@@ -275,22 +283,29 @@ def interactive_swap(playlist, all_dances):
             print("\n❌ Invalid command.")
 
 # --- SMOOTH FADE ---
-# How far down the fade travels before the final taper to true silence.
-# Sets the perceived steepness: -50 dB over 3s ≈ 17 dB/s, over 6s ≈ 8 dB/s.
-FADE_FLOOR_DB = -50.0
+# Level (dB) the fade has reached when the window ends. -60 dB is inaudible,
+# so this is effectively where the music disappears.
+FADE_FLOOR_DB = -60.0
+# Shape of the descent, as an exponent on the dB ramp. 1.0 = constant dB/s,
+# which lunges the moment the fade starts. Above 1.0 the slope begins at zero
+# and accelerates, so the fade eases in gently and drifts away at the end.
+# Higher = more of the window spent near full volume. See --fade-curve.
+FADE_CURVE = 2.0
 
-def smooth_fade_out(audio_segment, fade_ms, floor_db=FADE_FLOOR_DB):
+def smooth_fade_out(audio_segment, fade_ms, curve=FADE_CURVE, floor_db=FADE_FLOOR_DB):
     """
     Fade out over the full requested duration, sample by sample.
 
-    pydub's built-in fade_out() ramps amplitude linearly, so the level is still
-    only ~6 dB down at the halfway point and then collapses in the last few
-    hundred ms - it sounds like a short dip followed by a hard stop, and the
-    shape is identical no matter how long the fade is. This instead ramps the
-    fade in *decibels* (what the ear actually tracks), so the volume slides
-    down steadily for the whole --fade window and a longer fade audibly is a
-    gentler one. The trailing (1 - t) factor lands on true digital silence so
-    there is no click at the cut.
+    pydub's built-in fade_out() ramps amplitude linearly: still only ~6 dB down
+    at the halfway point, then a collapse in the last few hundred ms, with the
+    same shape no matter how long the fade is - a brief dip followed by a hard
+    stop. This ramps in *decibels* (what the ear tracks) and bends that ramp by
+    `curve`, so the descent starts at zero slope and steepens. The opening
+    second stays close to full volume instead of lunging downward, and the
+    track thins out to nothing rather than being cut off.
+
+    A short linear taper on the last few ms lands on true digital silence
+    (already inaudible by then) so nothing clicks at the cut.
     """
     fade_ms = int(round(fade_ms))
     if fade_ms <= 0 or len(audio_segment) == 0:
@@ -310,12 +325,17 @@ def smooth_fade_out(audio_segment, fade_ms, floor_db=FADE_FLOOR_DB):
     data = np.array(samples, dtype=np.float64)
 
     t = np.linspace(0.0, 1.0, frames, endpoint=True)
-    curve = (10.0 ** (floor_db * t / 20.0)) * (1.0 - t)
-    if channels > 1:
-        curve = np.repeat(curve, channels)
+    gain_db = floor_db * (t ** max(0.1, curve))
+    shaped = 10.0 ** (gain_db / 20.0)
+
+    # Land on absolute silence over the final few ms to avoid a click.
+    taper_frames = max(1, min(frames // 4, int(frames * 40.0 / fade_ms)))
+    shaped[-taper_frames:] *= np.linspace(1.0, 0.0, taper_frames, endpoint=True)
+
+    curve_samples = np.repeat(shaped, channels) if channels > 1 else shaped
 
     limits = np.iinfo(dtype)
-    faded = np.clip(np.rint(data * curve), limits.min, limits.max).astype(dtype)
+    faded = np.clip(np.rint(data * curve_samples), limits.min, limits.max).astype(dtype)
 
     return head + tail._spawn(faded.tobytes())
 
@@ -364,8 +384,10 @@ def print_statistics(playlist, dance_config, args, all_dances):
             speed_counts['Quick'] += 1
             song_len = custom_len if custom_len > 0 else args.length_quick
             
-        total_seconds += (song_len + args.silence)
-        
+        # Fade sits on top of the danceable length, so it counts toward the total
+        total_seconds += (song_len + args.fade + args.silence)
+
+    total_seconds = int(round(total_seconds))
     hours = total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     seconds = total_seconds % 60
@@ -500,10 +522,14 @@ def create_media(source_dir, output_dir, audio_filename, index, cover_img_path, 
     audio = effects.normalize(audio)
     audio = strip_trailing_silence(audio)
     
-    if len(audio) > settings['length_ms']:
-        audio = audio[:settings['length_ms']]
-        
-    audio = smooth_fade_out(audio, settings['fade_ms'])
+    # The configured length is full-volume dance time; the fade is appended on
+    # top of it rather than eaten out of it, so a 120s dance stays 120s danceable.
+    fade_ms = int(round(settings['fade_ms']))
+    danceable_ms = settings['length_ms'] + fade_ms
+    if len(audio) > danceable_ms:
+        audio = audio[:danceable_ms]
+
+    audio = smooth_fade_out(audio, fade_ms, settings.get('fade_curve', FADE_CURVE))
     silence = AudioSegment.silent(duration=settings['silence_ms'])
     final_audio = audio + silence
     
@@ -638,6 +664,7 @@ def main():
         track_settings = {
             'length_ms': current_length_sec * 1000,
             'fade_ms': args.fade * 1000,
+            'fade_curve': args.fade_curve,
             'silence_ms': args.silence * 1000
         }
         
