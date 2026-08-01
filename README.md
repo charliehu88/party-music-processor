@@ -153,10 +153,11 @@ The `--favorite` argument is highly flexible. You can provide either:
 *   `--output, -o`: Folder where MP4s will be saved.
 *   `--config, -cfg`: Path to the JSON weights file (default: `dance_config.json`).
 *   `--count, -c`: Number of songs to generate (default: `20`).
-*   `--length-quick`: Max length for Quick dances in seconds (default: `150` = 2m 30s).
-*   `--length-slow`: Max length for Slow dances in seconds (default: `180` = 3m 00s).
-*   `--fade`: Fade out duration in seconds (default: `3`).
-*   `--silence`: Silence padding in seconds (default: `8`).
+*   `--length-quick`: Max length of full-volume dance music for Quick dances in seconds (default: `150` = 2m 30s).
+*   `--length-slow`: Max length of full-volume dance music for Slow dances in seconds (default: `180` = 3m 00s).
+*   `--fade`: Fade out duration in seconds (default: `5`). The fade is added *after* the dance length, not taken out of it, so a dance configured for 120s gives dancers a full 120s before the music starts to fade.
+*   `--fade-curve`: Shape of the fade (default: `2.0`). Higher values hold near full volume longer and then ease down; `1.0` starts dropping immediately.
+*   `--silence`: Silence padding in seconds (default: `6`).
 *   `--mp3`: If set, also export processed MP3 files.
 *   `--output-mp3`: Folder for processed MP3s (default: `./output_processed_mp3s`).
 
