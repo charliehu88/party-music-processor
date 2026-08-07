@@ -24,6 +24,7 @@ party-music-processor/
 ├── playlist_2_file.py     # Playlist extractor tool
 ├── uploader.py            # Automated YouTube uploader
 ├── speed_adjuster.py      # Utility: Adjusts audio/video speed
+├── cutter.py              # Utility: Cuts audio/video to length with a fade out
 ├── volume_adjuster.py     # Utility: Adjusts audio volume
 ├── video_splitter.py      # Utility: Splits video files
 ├── music_identify.py      # Utility: Identifies and renames music files via Shazam
@@ -228,7 +229,17 @@ This repository includes several standalone helper scripts to fine-tune your dan
 
 To see exactly how to use each tool, append `-h` when running them from the command line (e.g., `python speed_adjuster.py -h`):
 
-* **`speed_adjuster.py`**: Modify the tempo (BPM) of specific dance tracks if they are too fast or too slow for a particular dance style.
+* **`speed_adjuster.py`**: Modify the tempo (BPM) of specific dance tracks if they are too fast or too slow for a particular dance style. Works on audio files (MP3, M4A) and on video files (MP4) — for video the picture is retimed along with the audio, so a generated playlist MP4 stays in sync.
+* **`cutter.py`**: Trim a single audio or video file down to a set length, ending with the same smooth fade out that `process.py` applies to playlist tracks. The fade is added *after* `--length` (so `--length 120 --fade 3` keeps a full 120s of music and runs 123s in total), and video files keep their picture — the video stream is copied untouched, so there is no quality loss.
+
+  ```bash
+  # Cut a song to 2 minutes, with the default 3 second fade
+  python cutter.py --source "Waltz - A Daisy in December.mp3" --length 120
+
+  # Cut a generated playlist MP4 to 2m 30s, with a 5 second fade
+  python cutter.py --source "output_mp4s/01_Rumba_-_Pata_Pata.mp4" --length 150 --fade 5
+  ```
+
 * **`volume_adjuster.py`**: Manually normalize or adjust the volume of individual files that fall outside the standard processing ranges.
 * **`converter.py`**: A general helper utility for handling various media format conversions.
 
