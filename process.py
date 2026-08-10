@@ -11,8 +11,11 @@ import numpy as np
 from pydub import AudioSegment, effects
 from PIL import Image, ImageDraw, ImageFont
 
-# Used only for the final statistics display
-STANDARD_DANCES = ['Waltz', 'Foxtrot', 'Tango', 'Viennese Waltz', 'Quickstep']
+# Fallback for dances whose config entry has no "category" set
+UNCATEGORIZED = "uncategorized"
+
+# The dance that opens and closes the party, when one has been selected
+BOOKEND_DANCE = "Waltz"
 
 def parse_args():
     # Added formatter_class to automatically display default values in -h output
@@ -55,10 +58,32 @@ def load_config(config_path):
             
         raw_dances = data.get('dances', {})
         # Normalize to Title Case to match filenames consistently
-        return {k.title(): v for k, v in raw_dances.items()}
+        config = {k.title(): dict(v) for k, v in raw_dances.items()}
+
+        # Normalize categories once, here, so the rest of the script can trust
+        # them. Entries without a category still work - they just group together
+        # under UNCATEGORIZED instead of alternating against anything.
+        missing = []
+        for dtype, info in config.items():
+            category = str(info.get('category') or '').strip().lower()
+            if not category:
+                missing.append(dtype)
+                category = UNCATEGORIZED
+            info['category'] = category
+
+        if missing:
+            print(f"⚠️  No 'category' set in config for: {', '.join(sorted(missing))} "
+                  f"(treated as '{UNCATEGORIZED}')")
+        return config
     except json.JSONDecodeError:
         print(f"Error: '{config_path}' is not valid JSON.")
         sys.exit(1)
+
+def get_category(dtype, dance_config):
+    return dance_config.get(dtype, {}).get('category', UNCATEGORIZED)
+
+def get_tempo(dtype, dance_config):
+    return 'Slow' if str(dance_config.get(dtype, {}).get('tempo', '')).lower() == 'slow' else 'Quick'
 
 def get_dance_type(filename, all_dances):
     # Sort by length descending so "Viennese Waltz" matches before "Waltz"
@@ -71,31 +96,54 @@ def get_dance_type(filename, all_dances):
         return match.group(1).title()
     return None
 
+def song_key(filename):
+    """
+    Identify a song by its name alone, ignoring case, padding and file format.
+
+    Favorites are scanned before the general pool, so a track sitting in both
+    places is claimed as a favorite and never picked a second time from the
+    pool. Matching loosely matters here: the same song often differs by a
+    stray space, a capital letter, or an .m4a next to an .mp3.
+    """
+    stem = os.path.splitext(filename)[0]
+    return " ".join(stem.split()).casefold()
+
 def parse_libraries(source_dir, favorite_path, all_dances):
     library = {}
-    
+    claimed = {}  # song_key -> where it was first taken from
+
+    def add_song(filename, dir_path, is_favorite):
+        """Returns 'added', 'duplicate' or 'unknown' (no dance type in the name)."""
+        dtype = get_dance_type(filename, all_dances)
+        if not dtype:
+            return 'unknown'
+
+        key = song_key(filename)
+        if key in claimed:
+            return 'duplicate'
+
+        claimed[key] = 'favorites' if is_favorite else 'pool'
+        library.setdefault(dtype, []).append({
+            'filename': filename,
+            'dir': dir_path,
+            'is_favorite': is_favorite
+        })
+        return 'added'
+
     def add_songs_from_dir(dir_path, is_favorite):
         if not os.path.exists(dir_path):
             return 0
-        count = 0
+        count = skipped = 0
         for filename in os.listdir(dir_path):
             if not filename.lower().endswith((".mp3", ".m4a")):
                 continue
-                
-            dtype = get_dance_type(filename, all_dances)
-            if not dtype:
-                continue
-                
-            if dtype not in library:
-                library[dtype] = []
-            # Avoid duplicates by filename
-            if not any(song['filename'] == filename for song in library[dtype]):
-                library[dtype].append({
-                    'filename': filename,
-                    'dir': dir_path,
-                    'is_favorite': is_favorite
-                })
-                count += 1
+
+            result = add_song(filename, dir_path, is_favorite)
+            count += (result == 'added')
+            skipped += (result == 'duplicate')
+
+        if skipped and not is_favorite:
+            print(f"Skipped {skipped} pool song{'s' if skipped != 1 else ''} already taken from favorites.")
         return count
     
     def add_songs_from_file(file_path, is_favorite):
@@ -120,21 +168,10 @@ def parse_libraries(source_dir, favorite_path, all_dances):
                 if not filename.lower().endswith((".mp3", ".m4a")):
                     continue
                     
-                dtype = get_dance_type(filename, all_dances)
-                if not dtype:
+                result = add_song(filename, dir_path, is_favorite)
+                if result == 'unknown':
                     print(f"Warning: Could not determine dance type for favorite song: {filename}")
-                    continue
-                    
-                if dtype not in library:
-                    library[dtype] = []
-                # Avoid duplicates by filename
-                if not any(song['filename'] == filename for song in library[dtype]):
-                    library[dtype].append({
-                        'filename': filename,
-                        'dir': dir_path,
-                        'is_favorite': is_favorite
-                    })
-                    count += 1
+                count += (result == 'added')
         return count
     
     total_count = 0
@@ -188,65 +225,249 @@ def calculate_global_quotas(target_count, dance_config, library):
         
     return quotas
 
-def arrange_abundance_aware(drafted_songs, dance_config, all_dances):
-    print("Arranging playlist (Focus: Even Distribution for ALL types)...")
-    final_playlist = []
+# --- SEQUENCING WEIGHTS ---
+# Tempo alternation is the first preference; category alternation is honoured
+# on a best-effort basis behind it, ahead of the balance nudge. Where the two
+# conflict the tempo change wins. When a rule cannot be honoured at all (say
+# only one category is left in the pool) the next rule down still decides the
+# pick, so the playlist degrades gracefully instead of failing.
+SCORE_DIFFERENT_TEMPO = 1000
+SCORE_DIFFERENT_CATEGORY = 400
+SCORE_ABUNDANCE = 200
+PENALTY_RECENT_TYPE = 10000
+HISTORY_LIMIT = 3
+
+def arrange_playlist(drafted_songs, dance_config, all_dances, opener=None, closer=None):
+    """
+    Order the drafted songs so the floor keeps changing character.
+
+    Greedy, one slot at a time, scoring every remaining song against the one
+    just placed: a different tempo is worth most, a different category next,
+    and repeating a dance type within HISTORY_LIMIT slots is heavily penalised.
+    A small abundance term prefers whatever category is most plentiful in the
+    remaining pool, which stops one category from piling up at the end - the
+    usual failure mode of naive alternation.
+
+    `opener` and `closer` are the songs already reserved for the first and last
+    slots (if any). Neither is placed here, but the run-in to each is scored
+    against it, so the bookends alternate with their neighbours too.
+    """
+    print("Arranging playlist (alternating category and tempo)...")
     pool = list(drafted_songs)
     random.shuffle(pool)
-    
-    last_speed = None
-    last_type = None
-    history_buffer = []
-    HISTORY_LIMIT = 4
-    
+
+    sequence = []
+    last_category = None
+    last_tempo = None
+    history = []
+
+    if opener:
+        opener_type = get_dance_type(opener['filename'], all_dances)
+        last_category = get_category(opener_type, dance_config)
+        last_tempo = get_tempo(opener_type, dance_config)
+        history.append(opener_type)
+
     while pool:
-        best_candidate = None
-        best_score = -999999
         total_remaining = len(pool)
-        
-        type_counts = {}
-        for s in pool:
-            t = get_dance_type(s['filename'], all_dances)
-            type_counts[t] = type_counts.get(t, 0) + 1
-            
+        category_counts = {}
         for song in pool:
-            score = 0
+            category = get_category(get_dance_type(song['filename'], all_dances), dance_config)
+            category_counts[category] = category_counts.get(category, 0) + 1
+
+        # On the final slot the reserved closer becomes the "next" neighbour
+        following = closer if (total_remaining == 1 and closer) else None
+        following_type = get_dance_type(following['filename'], all_dances) if following else None
+
+        best_candidate = None
+        best_score = None
+        for song in pool:
             dtype = get_dance_type(song['filename'], all_dances)
-            
-            # Fetch tempo from dynamic config
-            is_slow = dance_config.get(dtype, {}).get('tempo', '').lower() == 'slow'
-            speed = 'Slow' if is_slow else 'Quick'
-            
-            # 1. HISTORY PENALTY
-            if dtype in history_buffer:
-                score -= 10000
-                
-            # 2. ABUNDANCE BONUS
-            abundance_ratio = type_counts[dtype] / total_remaining
-            score += (abundance_ratio * 2000)
-            
-            # 3. SPEED ALTERNATION
-            if last_speed and speed != last_speed:
-                score += 300
-            elif last_speed and speed == last_speed:
-                score -= 50
-                
-            if score > best_score:
+            category = get_category(dtype, dance_config)
+            tempo = get_tempo(dtype, dance_config)
+
+            score = 0.0
+            if dtype in history:
+                score -= PENALTY_RECENT_TYPE
+            if last_category is not None and category != last_category:
+                score += SCORE_DIFFERENT_CATEGORY
+            if last_tempo is not None and tempo != last_tempo:
+                score += SCORE_DIFFERENT_TEMPO
+            score += (category_counts[category] / total_remaining) * SCORE_ABUNDANCE
+
+            if following_type:
+                if category != get_category(following_type, dance_config):
+                    score += SCORE_DIFFERENT_CATEGORY
+                if tempo != get_tempo(following_type, dance_config):
+                    score += SCORE_DIFFERENT_TEMPO
+                if dtype == following_type:
+                    score -= PENALTY_RECENT_TYPE
+
+            # Break ties randomly so equally good playlists still vary run to run
+            score += random.random()
+
+            if best_score is None or score > best_score:
                 best_score = score
                 best_candidate = song
-                
-        final_playlist.append(best_candidate)
+
+        sequence.append(best_candidate)
         pool.remove(best_candidate)
-        
-        last_type = get_dance_type(best_candidate['filename'], all_dances)
-        is_slow_type = dance_config.get(last_type, {}).get('tempo', '').lower() == 'slow'
-        last_speed = 'Slow' if is_slow_type else 'Quick'
-        
-        history_buffer.append(last_type)
-        if len(history_buffer) > HISTORY_LIMIT:
-            history_buffer.pop(0)
-            
-    return final_playlist
+
+        placed_type = get_dance_type(best_candidate['filename'], all_dances)
+        last_category = get_category(placed_type, dance_config)
+        last_tempo = get_tempo(placed_type, dance_config)
+
+        history.append(placed_type)
+        if len(history) > HISTORY_LIMIT:
+            history.pop(0)
+
+    return sequence
+
+# Relative cost of each rule being broken between two neighbouring songs.
+# Same ranking as the scoring above: repeating a dance type is worst, then
+# tempo, then category. One same-tempo pair costs more than two same-category
+# pairs, so a trade that fixes tempo at the expense of category is taken.
+COST_SAME_TYPE = 100
+COST_SAME_TEMPO = 10
+COST_SAME_CATEGORY = 4
+MAX_POLISH_PASSES = 50
+
+# How much worse the alternation may get before the opening Waltz is given up.
+# One tempo break is a fair price for the ceremony of opening on a Waltz;
+# beyond that the dancing wins. Set to 0 to make the Waltz yield on any cost
+# at all, or raise it to insist on the opening Waltz more stubbornly.
+BOOKEND_TOLERANCE = COST_SAME_TEMPO
+
+def polish_sequence(sequence, dance_config, all_dances, pinned=()):
+    """
+    Clean up what the greedy pass could not see coming.
+
+    Placing songs one at a time is myopic: it can strand a run of same-tempo
+    songs at the end because the good partners were already used. This walks
+    the finished order looking for changes that lower the total rule-breaking
+    cost, and keeps going until nothing improves.
+
+    Two kinds of move are tried. Swapping a pair fixes local mistakes, but on
+    its own it gets stuck: once one rule is satisfied everywhere, no single
+    swap can improve the other without breaking that boundary first. Reversing
+    a stretch of the playlist changes only the two adjacencies at its ends,
+    which is exactly the move needed to escape that.
+
+    Positions in `pinned` (the opening and closing dances) never move.
+    """
+    order = list(sequence)
+    pinned = set(pinned)
+
+    # get_dance_type runs a regex over every dance name, far too slow to call
+    # from inside a search loop - resolve each song's attributes once up front.
+    attributes = {}
+    for song in order:
+        name = song['filename']
+        if name not in attributes:
+            dtype = get_dance_type(name, all_dances)
+            attributes[name] = (dtype, get_category(dtype, dance_config), get_tempo(dtype, dance_config))
+
+    def pair_cost(first, second):
+        cost = 0
+        if first[0] == second[0]:
+            cost += COST_SAME_TYPE
+        if first[1] == second[1]:
+            cost += COST_SAME_CATEGORY
+        if first[2] == second[2]:
+            cost += COST_SAME_TEMPO
+        return cost
+
+    def total_cost(candidate):
+        return sum(pair_cost(attributes[candidate[i]['filename']],
+                             attributes[candidate[i + 1]['filename']])
+                   for i in range(len(candidate) - 1))
+
+    cost = total_cost(order)
+    movable = [i for i in range(len(order)) if i not in pinned]
+
+    for _ in range(MAX_POLISH_PASSES):
+        improved = False
+
+        for a_index, a in enumerate(movable):
+            for b in movable[a_index + 1:]:
+                order[a], order[b] = order[b], order[a]
+                candidate_cost = total_cost(order)
+                if candidate_cost < cost:
+                    cost = candidate_cost
+                    improved = True
+                else:
+                    order[a], order[b] = order[b], order[a]
+
+        for start in movable:
+            for end in movable:
+                if end <= start + 1 or any(i in pinned for i in range(start, end + 1)):
+                    continue
+                order[start:end + 1] = order[start:end + 1][::-1]
+                candidate_cost = total_cost(order)
+                if candidate_cost < cost:
+                    cost = candidate_cost
+                    improved = True
+                else:
+                    order[start:end + 1] = order[start:end + 1][::-1]
+
+        if not improved:
+            break
+
+    return order
+
+def alternation_cost(sequence, dance_config, all_dances):
+    """Total rule-breaking cost of a finished order. Lower is better."""
+    types = [get_dance_type(song['filename'], all_dances) for song in sequence]
+    cost = 0
+    for previous, current in zip(types, types[1:]):
+        if previous == current:
+            cost += COST_SAME_TYPE
+        if get_tempo(previous, dance_config) == get_tempo(current, dance_config):
+            cost += COST_SAME_TEMPO
+        if get_category(previous, dance_config) == get_category(current, dance_config):
+            cost += COST_SAME_CATEGORY
+    return cost
+
+def build_sequence(drafted_songs, dance_config, all_dances, opener=None, closer=None):
+    """Arrange, place the reserved bookends, then polish - pinning what is fixed."""
+    sequence = arrange_playlist(drafted_songs, dance_config, all_dances,
+                                opener=opener, closer=closer)
+    if opener:
+        sequence.insert(0, opener)
+    if closer:
+        sequence.append(closer)
+
+    pinned = ([0] if opener else []) + ([len(sequence) - 1] if closer else [])
+    return polish_sequence(sequence, dance_config, all_dances, pinned=pinned)
+
+def reserve_bookends(drafted_songs, dance_config, all_dances):
+    """
+    Pull a Waltz out for the opening slot and another for the closing slot.
+
+    Traditional last dance takes precedence: with only one Waltz drafted it
+    closes the party rather than opening it. With none, both slots are left
+    empty and the rule simply does not apply.
+    """
+    if dance_config.get(BOOKEND_DANCE, {}).get('weight', 0) <= 0:
+        return None, None
+
+    indices = [i for i, song in enumerate(drafted_songs)
+               if (get_dance_type(song['filename'], all_dances) or '').lower() == BOOKEND_DANCE.lower()]
+    if not indices:
+        print(f"ℹ️  No {BOOKEND_DANCE} selected - skipping the opening/closing {BOOKEND_DANCE} rule.")
+        return None, None
+
+    chosen = random.sample(indices, min(2, len(indices)))
+    closer = drafted_songs[chosen[0]]
+    opener = drafted_songs[chosen[1]] if len(chosen) > 1 else None
+
+    # Remove by index, highest first, so the earlier index stays valid
+    for i in sorted(chosen, reverse=True):
+        drafted_songs.pop(i)
+
+    # The opening slot is only a candidate at this point - whether it survives
+    # depends on what it does to the alternation (see main).
+    print(f"💾 Reserved Last Dance: {closer['filename']}")
+    return opener, closer
 
 def interactive_swap(playlist, all_dances):
     while True:
@@ -360,23 +581,24 @@ def strip_trailing_silence(audio_segment, silence_threshold=-45.0, chunk_size=50
 def print_statistics(playlist, dance_config, args, all_dances):
     stats = {}
     total = len(playlist)
-    style_counts = {'Standard': 0, 'Latin': 0}
+    category_counts = {}
     speed_counts = {'Slow': 0, 'Quick': 0}
+    favorite_count = 0
     total_seconds = 0
-    
+
     for song in playlist:
         dtype = get_dance_type(song['filename'], all_dances)
         stats[dtype] = stats.get(dtype, 0) + 1
-        
-        if any(d.lower() == dtype.lower() for d in STANDARD_DANCES):
-            style_counts['Standard'] += 1
-        else:
-            style_counts['Latin'] += 1
-            
+
+        category = get_category(dtype, dance_config)
+        category_counts[category] = category_counts.get(category, 0) + 1
+        if song.get('is_favorite'):
+            favorite_count += 1
+
         # Fetch dynamic tempo and length
         is_slow = dance_config.get(dtype, {}).get('tempo', '').lower() == 'slow'
         custom_len = dance_config.get(dtype, {}).get('length', 0)
-        
+
         if is_slow:
             speed_counts['Slow'] += 1
             song_len = custom_len if custom_len > 0 else args.length_slow
@@ -393,13 +615,27 @@ def print_statistics(playlist, dance_config, args, all_dances):
     seconds = total_seconds % 60
     time_str = f"{hours}h {minutes}m {seconds}s (approx)"
     
+    # How well the ordering rules held up - 0 repeats means perfect alternation
+    category_repeats = tempo_repeats = 0
+    for previous, current in zip(playlist, playlist[1:]):
+        prev_type = get_dance_type(previous['filename'], all_dances)
+        curr_type = get_dance_type(current['filename'], all_dances)
+        if get_category(prev_type, dance_config) == get_category(curr_type, dance_config):
+            category_repeats += 1
+        if get_tempo(prev_type, dance_config) == get_tempo(curr_type, dance_config):
+            tempo_repeats += 1
+
     output_lines = []
     output_lines.append("\n" + "="*40)
     output_lines.append(f"📊 FINAL STATISTICS ({total} songs)")
     output_lines.append(f"   ⏱️  Max Duration: {time_str}")
     output_lines.append("-" * 36)
-    output_lines.append(f"   Standard: {style_counts['Standard']} | Latin: {style_counts['Latin']}")
+    category_summary = " | ".join(f"{name.title()}: {count}"
+                                 for name, count in sorted(category_counts.items()))
+    output_lines.append(f"   {category_summary}")
     output_lines.append(f"   Slow: {speed_counts['Slow']} | Quick: {speed_counts['Quick']}")
+    output_lines.append(f"   Favorites: {favorite_count} of {total}")
+    output_lines.append(f"   Back-to-back same category: {category_repeats} | same tempo: {tempo_repeats}")
     output_lines.append("="*40)
     output_lines.append(f"{'DANCE TYPE':<20} | {'COUNT':<5} | {'%':<5}")
     output_lines.append("-" * 36)
@@ -579,29 +815,31 @@ def main():
     quotas = calculate_global_quotas(args.count, dance_config, library)
 
     # --- 2. SELECT SONGS ---
+    # Favorites are drawn first and exhaustively; the rest of the quota comes
+    # from the general pool. Both draws use random.sample, so within each group
+    # every song has exactly the same chance of being picked - no ordering,
+    # folder or filename bias.
     drafted_songs = []
-    # Create a mutable pool of available songs, separating favs and non-favs
     fav_pool = {dtype: [s for s in songs if s['is_favorite']] for dtype, songs in library.items()}
     non_fav_pool = {dtype: [s for s in songs if not s['is_favorite']] for dtype, songs in library.items()}
-    for p in fav_pool.values(): random.shuffle(p)
-    for p in non_fav_pool.values(): random.shuffle(p)
-    
+
     # Fulfill quotas as best as possible
     for dtype, count in quotas.items():
         if count == 0:
             continue
-        print(f"  - {dtype}: {count}")
-        
-        picked_for_type = []
-        
-        # Pick from favorites first
-        while len(picked_for_type) < count and fav_pool.get(dtype):
-            picked_for_type.append(fav_pool[dtype].pop(0))
-        
-        # Then from non-favorites
-        while len(picked_for_type) < count and non_fav_pool.get(dtype):
-            picked_for_type.append(non_fav_pool[dtype].pop(0))
-        
+
+        favorites = fav_pool.get(dtype, [])
+        others = non_fav_pool.get(dtype, [])
+
+        picked_for_type = random.sample(favorites, min(count, len(favorites)))
+        fav_used = len(picked_for_type)
+        if len(picked_for_type) < count:
+            needed = count - len(picked_for_type)
+            picked_for_type += random.sample(others, min(needed, len(others)))
+
+        fav_note = f" ({fav_used} favorite{'s' if fav_used != 1 else ''})" if fav_used else ""
+        print(f"  - {dtype}: {count}{fav_note}")
+
         if len(picked_for_type) < count:
             print(f"Warning: Not enough unique songs for {dtype}. Repeating to meet quota.")
             # All unique songs for this type have been used.
@@ -618,24 +856,31 @@ def main():
             
         drafted_songs.extend(picked_for_type)
 
-    # --- 3. RESERVE LAST DANCE ---
-    reserved_last = None
-    is_waltz_in_config = dance_config.get('Waltz', {}).get('weight', 0) > 0
-    
-    if is_waltz_in_config:
-        # Find a waltz in the drafted songs to reserve for the end
-        waltz_indices = [i for i, song in enumerate(drafted_songs) if get_dance_type(song['filename'], all_dances).lower() == 'waltz']
-        if waltz_indices:
-            # Pick one of the drafted waltzes to be the last dance
-            idx_to_pop = random.choice(waltz_indices)
-            reserved_last = drafted_songs.pop(idx_to_pop)
-            if reserved_last:
-                print(f"💾 Reserved Last Dance: {reserved_last['filename']}")
+    # --- 3. RESERVE OPENING AND LAST DANCE ---
+    reserved_first, reserved_last = reserve_bookends(drafted_songs, dance_config, all_dances)
 
     # --- 4. ARRANGE ---
-    master_playlist = arrange_abundance_aware(drafted_songs, dance_config, all_dances)
-    if reserved_last:
-        master_playlist.append(reserved_last)
+    master_playlist = build_sequence(drafted_songs, dance_config, all_dances,
+                                     opener=reserved_first, closer=reserved_last)
+
+    # Opening on a Waltz is a preference, not a requirement. Pinning it to the
+    # front takes a song out of circulation at the point where alternation
+    # needs it most, so build the playlist both ways and compare. A small
+    # penalty is worth paying for the ceremony; a large one is not.
+    # The closing Waltz stays put - the last dance is the tradition worth
+    # protecting.
+    if reserved_first:
+        without_opener = build_sequence(drafted_songs + [reserved_first], dance_config,
+                                        all_dances, opener=None, closer=reserved_last)
+        cost_with = alternation_cost(master_playlist, dance_config, all_dances)
+        cost_without = alternation_cost(without_opener, dance_config, all_dances)
+
+        if cost_with - cost_without > BOOKEND_TOLERANCE:
+            print(f"ℹ️  Opening on a {BOOKEND_DANCE} would break up the alternation too much - "
+                  f"letting it fall where it fits instead.")
+            master_playlist = without_opener
+        else:
+            print(f"💾 Reserved Opening Dance: {reserved_first['filename']}")
 
     # --- 5. INTERACTIVE REVIEW ---
     master_playlist = interactive_swap(master_playlist, all_dances)

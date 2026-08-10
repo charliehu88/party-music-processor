@@ -3,97 +3,116 @@
     "Waltz": {
       "weight": 10,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "ballroom"
     },
     "Foxtrot": {
       "weight": 5,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "ballroom"
     },
     "Tango": {
       "weight": 8,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "ballroom"
     },
     "Viennese Waltz": {
       "weight": 5,
       "tempo": "quick",
-      "length": 120
+      "length": 120,
+      "category": "ballroom"
     },
     "Quickstep": {
       "weight": 3,
       "tempo": "quick",
-      "length": 150
+      "length": 150,
+      "category": "ballroom"
     },
     "Rumba": {
       "weight": 10,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "latin"
     },
     "ChaCha": {
       "weight": 10,
       "tempo": "quick",
-      "length": 0
+      "length": 0,
+      "category": "latin"
     },
     "Samba": {
       "weight": 6,
       "tempo": "quick",
-      "length": 150
+      "length": 150,
+      "category": "latin"
     },
     "Jive": {
       "weight": 3,
       "tempo": "quick",
-      "length": 140
+      "length": 140,
+      "category": "latin"
     },
     "Paso Doble": {
       "weight": 3,
       "tempo": "quick",
-      "length": 120
+      "length": 120,
+      "category": "latin"
     },
     "Hustle": {
       "weight": 4,
       "tempo": "quick",
-      "length": 0
+      "length": 0,
+      "category": "social"
     },
     "Salsa": {
       "weight": 4,
       "tempo": "quick",
-      "length": 0
+      "length": 0,
+      "category": "social"
     },
     "Bachata": {
       "weight": 5,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "social"
     },
     "Merengue": {
       "weight": 3,
       "tempo": "quick",
-      "length": 0
+      "length": 0,
+      "category": "social"
     },
     "West Coast Swing": {
       "weight": 2,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "social"
     },
     "Swing": {
       "weight": 4,
       "tempo": "quick",
-      "length": 0
+      "length": 0,
+      "category": "social"
     },
     "Bolero": {
       "weight": 2,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "social"
     },
     "Country Two Step": {
       "weight": 2,
       "tempo": "quick",
-      "length": 0
+      "length": 0,
+      "category": "social"
     },
     "Nightclub Two Step": {
       "weight": 2,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "social"
     }
   }
 }

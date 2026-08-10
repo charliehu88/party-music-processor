@@ -5,7 +5,7 @@
 A Python automation tool for ballroom dance hosts. This tool transforms a local collection of audio files (MP3s, M4As) into a sequence of YouTube-ready MP4 videos.
 
 It automates the DJ process by:
-1. **Sequencing:** Alternating between "Quick" and "Slow" dances based on configurable logic.
+1. **Sequencing:** Alternating tempo and dance category so the floor keeps changing character, and opening and closing the party on a Waltz.
 2. **Processing:** Trimming songs to a set length, normalizing volume, and adding fades/silence.
 3. **Visualizing:** Generating a 720p video file that displays "NOW PLAYING" and "COMING UP NEXT" metadata for your guests.
 4. **Uploading:** Publishing the finished videos to YouTube (Manually or Automatically).
@@ -132,7 +132,9 @@ python process.py --source ./input_mp3s --favorite ./favorites --output ./output
 
 *(Run `python process.py -h` to see all available arguments like fade duration, song lengths, etc.)*
 
-The processor prioritizes songs from the `--favorite` directory over the `--source` directory for each dance type. If favorites are available for a type, they are selected first before falling back to source songs.
+The processor prioritizes songs from the `--favorite` directory over the `--source` directory for each dance type. If favorites are available for a type, they are selected first before falling back to source songs. Beyond that, every song in a pool has exactly the same chance of being drawn.
+
+A song often lives in both places. Favorites are scanned first and claim the song, so it keeps its favorite priority and the copy in the general pool is skipped — the same track can never appear twice in one playlist. Matching is by filename only, ignoring the folder, capitalization, extra spaces and file format, so `~/favorites/ABC.mp3` and `input_mp3s_m4as/abc.m4a` count as one song. (A renamed copy such as `ABC copy.mp3` still reads as a different song.)
 
 ### Flexible Favorites
 
@@ -164,7 +166,7 @@ The `--favorite` argument is highly flexible. You can provide either:
 
 ## ⚙️ Configuration (Weights)
 
-Edit `dance_config.json` to change the probability of specific dance styles appearing. Each dance has a `weight` (relative importance), `tempo` ("slow" or "quick"), and optional `length` (custom max duration in seconds, 0 uses defaults).
+Edit `dance_config.json` to change the probability of specific dance styles appearing. Each dance has a `weight` (relative importance), `tempo` ("slow" or "quick"), a `category` ("ballroom", "latin" or "social") used to space similar dances apart, and an optional `length` (custom max duration in seconds, 0 uses defaults).
 
 ```json
 {
@@ -172,26 +174,52 @@ Edit `dance_config.json` to change the probability of specific dance styles appe
     "Waltz": {
       "weight": 10,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "ballroom"
     },
     "Foxtrot": {
       "weight": 5,
       "tempo": "slow",
-      "length": 0
+      "length": 0,
+      "category": "ballroom"
     },
     "ChaCha": {
       "weight": 10,
       "tempo": "quick",
-      "length": 0
+      "length": 0,
+      "category": "latin"
     },
     "Viennese Waltz": {
       "weight": 5,
       "tempo": "quick",
-      "length": 120
+      "length": 120,
+      "category": "ballroom"
     }
   }
 }
 ```
+
+A dance with no `category` still works — it is reported at startup and grouped as "uncategorized", which simply means it has nothing to alternate against. Categories are your own labels: add a new one (say `"country"`) and the sequencer will space those dances apart like any other.
+
+### 🔀 How the running order is decided
+
+Weights decide *how many* songs of each dance you get; these rules decide the *order*:
+
+1.  **Alternate tempo** — first preference. A Quick dance follows a Slow one wherever possible.
+2.  **Alternate category** — best effort, applied behind tempo. Where the two conflict, the tempo change wins.
+3.  **No repeated dance type** back to back, and none repeated within 3 slots where the pool allows.
+4.  **Waltz opens and closes the party.** The last dance always holds. The opening Waltz gives way if pinning it there would break up the alternation too much; with only one Waltz drafted it closes rather than opens, and with none the rule is skipped.
+
+All of these are preferences, not requirements — the playlist is always generated in full, even from a pool where alternation is impossible (an all-Latin config, say). After each run the statistics report how well it did:
+
+```
+   Ballroom: 4 | Latin: 3 | Social: 1
+   Slow: 5 | Quick: 3
+   Favorites: 0 of 8
+   Back-to-back same category: 0 | same tempo: 1
+```
+
+Some repeats are unavoidable and simply reflect the weights. If a playlist has, say, 11 Quick dances and 9 Slow ones, no ordering can alternate tempo the whole way through — the fix is to rebalance the weights, not the order.
 
 ## 📤 Step 3: Upload to YouTube
 
