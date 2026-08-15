@@ -16,11 +16,13 @@ It automates the DJ process by:
 party-music-processor/
 ├── assets/                # (Not used by default)
 ├── input_mp3s_m4as/       # Drop your source audio files here
+├── dance_videos/          # Optional: dance clips for video backgrounds
 ├── output_mp4s/           # Generated video files appear here
 ├── .venv/                 # Python virtual environment
 ├── NotoSansSC-VariableFont_wght.ttf  # Font for video overlays
 ├── process.py             # Core processing logic
 ├── download.py            # Batch downloader tool
+├── collect_dance_videos.py # Searches YouTube for dance clips by dance type
 ├── playlist_2_file.py     # Playlist extractor tool
 ├── uploader.py            # Automated YouTube uploader
 ├── speed_adjuster.py      # Utility: Adjusts audio/video speed
@@ -88,6 +90,14 @@ python download.py
 ```
 
 *(Run `python download.py -h` for usage details)*
+
+By default `download.py` extracts audio to MP3. Pass `--download-type mp4` (`-t mp4`) to keep the picture instead, which is how you grab a specific dance video by URL for a `--video-pool`:
+
+```bash
+python download.py -l dance_clips.txt -o ./dance_videos -t mp4
+```
+
+Audio and video of the same URL are tracked separately in `download_history.log`, so downloading a link as MP3 does not stop you fetching the MP4 later.
 
 **Option B: Extract YouTube Playlist to Downloads List**
 
@@ -163,6 +173,68 @@ The `--favorite` argument is highly flexible. You can provide either:
 *   `--silence`: Silence padding in seconds (default: `6`).
 *   `--mp3`: If set, also export processed MP3 files.
 *   `--output-mp3`: Folder for processed MP3s (default: `./output_processed_mp3s`).
+*   `--video-pool, -v`: Folder of dance clips to play behind each track instead of the static cover. See below.
+*   `--intro`: Seconds the full text card stays up before dissolving into the dance video (default: `6.0`, `--video-pool` only).
+
+### 🎬 Dance Video Backgrounds
+
+By default every track is a still cover card. Point `--video-pool` at a folder of dance clips and each track instead:
+
+1.  Opens on the usual **full text card** for `--intro` seconds (default 6).
+2.  **Dissolves** over one second into real dance footage for that dance type.
+3.  Keeps **"COMING UP NEXT"** on screen in a lower third for the rest of the track.
+
+The next-up block sits at the same place on the card and in the lower third, so it does not move during the dissolve — the "now playing" half fades away and the next-up half simply stays. Over footage it gains a dark scrim and a black outline so it stays readable against bright dresses and spotlights.
+
+```bash
+python process.py -s ./input_mp3s -o ./output_mp4s -v ./dance_videos --intro 6
+```
+
+Clips use the **same naming convention as the music**, in one flat folder — no subfolders:
+
+```
+dance_videos/
+├── Waltz - Vienna Opera Ball.mp4
+├── Waltz - Blackpool Final.mp4
+├── Rumba - World Championship.mp4
+└── ChaCha - Showdance.mp4
+```
+
+Details worth knowing:
+
+*   **Clips are chained, not looped.** A 95s track backed by 30s clips plays three *different* Waltz clips back to back. Each dance keeps its own shuffled queue that carries across the playlist, so a clip only repeats once the rest of that dance's clips have been used.
+*   **Any dance without clips keeps the static cover**, so you can start with footage for just a few dance types and grow the folder over time. A missing folder falls back the same way with a warning.
+*   Clips are **cropped to fill** 1280x720 rather than letterboxed, and their own audio is discarded.
+*   Clips shorter than 3s, or files with no dance type in the name, are skipped and reported.
+*   Rendering real footage is slower than a still image — expect minutes rather than seconds for a full party.
+
+#### Collecting the clips
+
+`collect_dance_videos.py` searches YouTube per dance type and fills the pool with correctly named files. List the dance types you want, one per line:
+
+```text
+# Dance Type | Count | Extra search terms (both optional)
+Waltz | 6
+Rumba | 4
+Viennese Waltz | 3 | competition final
+ChaCha
+```
+
+```bash
+python collect_dance_videos.py -l dance_videos.txt -o ./dance_videos --dry-run   # preview
+python collect_dance_videos.py -l dance_videos.txt -o ./dance_videos             # download
+```
+
+Each clip is saved as `<Dance Type> - <video title>.mp4`, ready for `--video-pool` with no renaming.
+
+*   `--per-dance, -n`: Clips per dance when the list gives no count (default: `5`).
+*   `--query, -q`: Search template (default: `{dance} ballroom dance performance`). `{dance}` is replaced with the dance type.
+*   `--min-duration` / `--max-duration`: Duration filter in seconds (default: `30`–`900`), which keeps out thumbnails and two-hour competition livestreams.
+*   `--max-height`: Resolution cap (default: `1080`).
+*   `--archive`: yt-dlp archive of everything already collected (default: `dance_video_archive.txt`). Search results overlap heavily between runs, so this is what stops a second run re-fetching the same clips. `--force` ignores it.
+*   `--dry-run`: Print the titles and durations the search would fetch, without downloading.
+
+> **⚠️ Review what you get.** The dance-type prefix comes from *your list file*, not from the video — a "Waltz" search will happily return a Viennese Waltz and it will be filed under Waltz. Skim the folder after collecting and delete or rename anything that does not match.
 
 ## ⚙️ Configuration (Weights)
 

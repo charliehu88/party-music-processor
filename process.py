@@ -28,7 +28,11 @@ def parse_args():
     parser.add_argument("--output", "-o", default="./output_mp4s", help="Path to output folder")
     parser.add_argument("--config", "-cfg", default="dance_config.json", help="Path to weights JSON")
     parser.add_argument("--count", "-c", type=int, default=20, help="Number of songs")
-    
+    parser.add_argument("--video-pool", "-v", help="Path to dance video clips, named '<Dance Type> - <name>.mp4'. "
+                                                   "Clips play behind each track instead of the static cover.")
+    parser.add_argument("--intro", type=float, default=6.0,
+                        help="Seconds the full text card stays up before dissolving into the dance video (--video-pool only)")
+
     # Export Flags
     parser.add_argument("--mp3", action="store_true", help="If set, also export processed MP3 files")
     parser.add_argument("--output-mp3", default="./output_processed_mp3s", help="Path to output MP3 folder")
@@ -46,6 +50,8 @@ def parse_args():
     args.source = os.path.expanduser(args.source)
     if args.favorite:
         args.favorite = os.path.expanduser(args.favorite)
+    if args.video_pool:
+        args.video_pool = os.path.expanduser(args.video_pool)
     return args
 
 def load_config(config_path):
@@ -704,51 +710,244 @@ def extract_metadata(filename):
         return {'type': parts[0].strip(), 'name': parts[1].strip()}
     return {'type': 'Dance', 'name': base}
 
+FONT_PATH = "./NotoSansSC-VariableFont_wght.ttf"
+COVER_W, COVER_H = 1280, 720
+
+# Where the "coming up next" block sits. The full card and the lower third that
+# replaces it both draw from these numbers, so the block stays put when one
+# dissolves into the other instead of sliding or doubling up on screen.
+NEXT_DIVIDER_Y = 440
+NEXT_LABEL_XY = (100, 470)
+NEXT_TYPE_XY = (100, 530)
+NEXT_NAME_XY = (100, 650)
+
+C_NEXT_LABEL = (255, 105, 180)  # Vibrant Hot Pink
+C_NEXT_TYPE = (0, 255, 255)     # Pure Neon Cyan
+C_SONG = (255, 255, 255)
+
+
+def load_fonts():
+    """The shared font ladder for both the cover card and the lower third."""
+    try:
+        sizes = {'xxl': 150, 'xl': 110, 'l': 60, 'm': 45, 's': 40}
+        return {name: ImageFont.truetype(FONT_PATH, size) for name, size in sizes.items()}
+    except IOError:
+        print("⚠️ Font not found! Falling back to default.")
+        fallback = ImageFont.load_default()
+        return {name: fallback for name in ('xxl', 'xl', 'l', 'm', 's')}
+
+
+def draw_coming_up_next(draw, next_meta, fonts, stroke_width=0):
+    """
+    Draw the 'coming up next' block at the shared coordinates.
+
+    stroke_width outlines the text in black, which the lower third needs to
+    survive bright dance footage. The card sits on its own dark gradient and
+    passes 0.
+    """
+    stroke = {'stroke_width': stroke_width, 'stroke_fill': (0, 0, 0)} if stroke_width else {}
+    draw.text(NEXT_LABEL_XY, "COMING UP NEXT:", font=fonts['m'], fill=C_NEXT_LABEL, **stroke)
+    draw.text(NEXT_TYPE_XY, next_meta['type'], font=fonts['xl'], fill=C_NEXT_TYPE, **stroke)
+    draw.text(NEXT_NAME_XY, next_meta['name'], font=fonts['s'], fill=C_SONG, **stroke)
+
+
 def generate_dynamic_cover(current_meta, next_meta, output_img_path):
-    FONT_PATH = "./NotoSansSC-VariableFont_wght.ttf"
-    W, H = 1280, 720
+    W, H = COVER_W, COVER_H
     img = Image.new('RGB', (W, H))
     draw = ImageDraw.Draw(img)
-    
+
     # 1. Create a beautiful dark gradient background (Midnight Blue to Deep Purple)
     for y in range(H):
         r = int(15 + (45 - 15) * (y / H))
         g = int(10 + (20 - 10) * (y / H))
         b = int(35 + (70 - 35) * (y / H))
         draw.line([(0, y), (W, y)], fill=(r, g, b))
-        
+
     # 2. Add subtle abstract decorative circles to give it a "party/dance" vibe
     draw.ellipse((800, -100, 1400, 500), outline=(60, 40, 90), width=10)
     draw.ellipse((900, 100, 1300, 500), outline=(50, 30, 80), width=5)
     draw.ellipse((-200, 400, 300, 900), outline=(30, 40, 80), width=8)
 
-    try:
-        font_xxl = ImageFont.truetype(FONT_PATH, 150)
-        font_xl = ImageFont.truetype(FONT_PATH, 110)
-        font_l = ImageFont.truetype(FONT_PATH, 60)
-        font_m = ImageFont.truetype(FONT_PATH, 45)
-        font_s = ImageFont.truetype(FONT_PATH, 40)
-    except IOError:
-        print("⚠️ Font not found! Falling back to default.")
-        font_xxl = font_xl = font_l = font_m = font_s = ImageFont.load_default()
-        
+    fonts = load_fonts()
+
     c_label = (180, 180, 180)
     c_dance = (255, 215, 0)
-    c_song = (255, 255, 255)
-    
-    draw.text((100, 100), "NOW PLAYING:", font=font_m, fill=c_label)
-    draw.text((100, 160), current_meta['type'], font=font_xxl, fill=c_dance)
-    draw.text((100, 340), current_meta['name'], font=font_l, fill=c_song)
-    
+
+    draw.text((100, 100), "NOW PLAYING:", font=fonts['m'], fill=c_label)
+    draw.text((100, 160), current_meta['type'], font=fonts['xxl'], fill=c_dance)
+    draw.text((100, 340), current_meta['name'], font=fonts['l'], fill=C_SONG)
+
     if next_meta:
-        draw.line((50, 440, W-50, 440), fill=(80, 80, 110), width=3)
-        c_next_label = (255, 105, 180) # Vibrant Hot Pink
-        draw.text((100, 470), "COMING UP NEXT:", font=font_m, fill=c_next_label)
-        c_next = (0, 255, 255) # Pure Neon Cyan
-        draw.text((100, 530), next_meta['type'], font=font_xl, fill=c_next)
-        draw.text((100, 650), next_meta['name'], font=font_s, fill=c_song)
-        
+        draw.line((50, NEXT_DIVIDER_Y, W - 50, NEXT_DIVIDER_Y), fill=(80, 80, 110), width=3)
+        draw_coming_up_next(draw, next_meta, fonts)
+
     img.save(output_img_path)
+
+# Clip pool file types. Anything ffmpeg can decode works; these are the
+# containers yt-dlp and video_splitter.py actually produce.
+VIDEO_EXTENSIONS = (".mp4", ".mov", ".m4v", ".webm", ".mkv")
+
+# Seconds the text card takes to dissolve into the dance video, and the matching
+# fade-in of the lower third that replaces it.
+CARD_XFADE_SEC = 1.0
+
+# Clips shorter than this are noise (stray thumbnails, broken downloads) and
+# would need absurd repetition to fill a track.
+MIN_CLIP_SEC = 3.0
+
+# Stop chaining clips long before a pool of tiny files can spin forever.
+MAX_CLIPS_PER_TRACK = 40
+
+
+def parse_video_pool(pool_dir, all_dances):
+    """
+    Scan a flat folder of dance clips named '<Dance Type> - <name>.mp4'.
+
+    Same naming rule as the music library, so `video_splitter.py --prefix
+    "Waltz"` and `download.py --download-type mp4` both drop files in ready to
+    use. Returns {dance_type: [(path, duration_sec), ...]}.
+    """
+    if not os.path.isdir(pool_dir):
+        print(f"⚠️  Video pool '{pool_dir}' not found - falling back to static covers.")
+        return {}
+
+    clips = {}
+    unknown = short = 0
+    filenames = sorted(f for f in os.listdir(pool_dir) if f.lower().endswith(VIDEO_EXTENSIONS))
+
+    print(f"Scanning {len(filenames)} clips in video pool: {pool_dir}")
+    for filename in filenames:
+        dtype = get_dance_type(filename, all_dances)
+        if not dtype:
+            unknown += 1
+            continue
+
+        path = os.path.join(pool_dir, filename)
+        duration = get_video_duration(path)
+        if duration < MIN_CLIP_SEC:
+            short += 1
+            continue
+
+        clips.setdefault(dtype, []).append((path, duration))
+
+    if unknown:
+        print(f"  ⚠️  {unknown} clip(s) skipped - no dance type in the filename.")
+    if short:
+        print(f"  ⚠️  {short} clip(s) skipped - shorter than {MIN_CLIP_SEC:.0f}s or unreadable.")
+
+    if clips:
+        summary = ", ".join(f"{dtype}: {len(v)}" for dtype, v in sorted(clips.items()))
+        print(f"  🎬 Clips available for {len(clips)} dance type(s) - {summary}")
+    else:
+        print("  ⚠️  No usable clips found - every track will use the static cover.")
+    return clips
+
+
+class VideoPool:
+    """
+    Hands out clips for a dance type, chaining as many as a track needs.
+
+    Each type keeps its own shuffled queue that carries across songs, so a
+    second Waltz shows different footage from the first and a clip only comes
+    back once the rest of that dance's pool has been used.
+    """
+
+    def __init__(self, clips_by_type):
+        self._clips = clips_by_type
+        self._queue = {}
+
+    def has(self, dtype):
+        return bool(self._clips.get(dtype))
+
+    def _next_clip(self, dtype):
+        queue = self._queue.get(dtype)
+        if not queue:
+            queue = list(self._clips[dtype])
+            random.shuffle(queue)
+            self._queue[dtype] = queue
+        return queue.pop()
+
+    def take(self, dtype, needed_sec):
+        """Return clip paths whose durations cover needed_sec, repeating if the pool is small."""
+        if not self.has(dtype):
+            return []
+
+        chosen, covered = [], 0.0
+        while covered < needed_sec and len(chosen) < MAX_CLIPS_PER_TRACK:
+            path, duration = self._next_clip(dtype)
+            chosen.append(path)
+            covered += duration
+        return chosen
+
+
+def generate_lower_third(next_meta, output_img_path):
+    """
+    Transparent overlay that keeps 'COMING UP NEXT' on screen once the full
+    text card has dissolved away.
+
+    The block is drawn at the same coordinates the card uses, so it does not
+    move during the dissolve - the now-playing half fades off and this half
+    appears to simply stay. Dance footage is bright and busy, so here the text
+    additionally gets a dark scrim behind it and a black outline; either alone
+    would lose against a spotlit white dress.
+    """
+    W, H = COVER_W, COVER_H
+    BAND_TOP = NEXT_DIVIDER_Y - 20
+
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # Scrim: ramps up over the first quarter of the band so there is no hard
+    # line cutting across the video, then holds solid under all of the text.
+    for y in range(BAND_TOP, H):
+        progress = (y - BAND_TOP) / (H - BAND_TOP)
+        alpha = int(235 * min(1.0, progress / 0.25))
+        draw.line([(0, y), (W, y)], fill=(8, 6, 20, alpha))
+
+    draw.line((50, NEXT_DIVIDER_Y, W - 50, NEXT_DIVIDER_Y), fill=(80, 80, 110), width=3)
+    draw_coming_up_next(draw, next_meta, load_fonts(), stroke_width=4)
+
+    img.save(output_img_path)
+
+
+def build_video_filter(clip_count, intro_sec, has_lower_third):
+    """
+    Compose the per-track picture: dance clips underneath, the full text card
+    on top for the intro, then the lower third for the rest.
+
+    The card does not cut - it fades its alpha out over CARD_XFADE_SEC while
+    the lower third fades in, so the video is already running underneath when
+    the card clears.
+    """
+    parts = []
+
+    # Input 0 is the card, input 1 the lower third when there is a next song.
+    # Fill the frame rather than letterboxing: a party screen wants full bleed.
+    clip_start = 2 if has_lower_third else 1
+    for i in range(clip_count):
+        parts.append(
+            f"[{i + clip_start}:v]scale=1280:720:force_original_aspect_ratio=increase,"
+            f"crop=1280:720,fps=30,setsar=1,format=yuv420p[c{i}]"
+        )
+
+    if clip_count > 1:
+        chain = "".join(f"[c{i}]" for i in range(clip_count))
+        parts.append(f"{chain}concat=n={clip_count}:v=1:a=0[bg]")
+    else:
+        parts.append("[c0]null[bg]")
+
+    fade_out_at = intro_sec
+    parts.append(f"[0:v]format=rgba,fade=t=out:st={fade_out_at}:d={CARD_XFADE_SEC}:alpha=1[card]")
+    parts.append("[bg][card]overlay=0:0:eof_action=pass[withcard]")
+
+    if has_lower_third:
+        parts.append(f"[1:v]format=rgba,fade=t=in:st={fade_out_at}:d={CARD_XFADE_SEC}:alpha=1[low]")
+        parts.append("[withcard][low]overlay=0:0:eof_action=pass,format=yuv420p[v]")
+    else:
+        parts.append("[withcard]format=yuv420p[v]")
+
+    return ";".join(parts)
+
 
 def create_media(source_dir, output_dir, audio_filename, index, cover_img_path, settings, export_mp3_path=None):
     input_audio_path = os.path.join(source_dir, audio_filename)
@@ -778,16 +977,49 @@ def create_media(source_dir, output_dir, audio_filename, index, cover_img_path, 
     
     # Calculate exact duration to prevent A/V drift during concatenation
     duration_sec = len(final_audio) / 1000.0
-    
-    cmd = ['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error', 
-           '-loop', '1', '-framerate', '30', '-i', cover_img_path, 
-           '-i', temp_wav_path, 
-           '-filter_complex', '[1:a]apad[A]',
-           '-map', '0:v', '-map', '[A]',
-           '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', 
-           '-c:a', 'aac', '-b:a', '256k', 
-           '-ar', '44100', '-ac', '2',
-           '-t', str(duration_sec), output_mp4_path]
+
+    # Only ask the pool for clips once the real track length is known, and take
+    # a couple of seconds more than needed so rounding can never leave a black
+    # tail at the end of the song.
+    pool = settings.get('video_pool')
+    clips = pool.take(settings['dance_type'], duration_sec + 2.0) if pool else []
+
+    if clips:
+        lower_img_path = settings.get('lower_img_path')
+        # A very short track must still get its card before the dissolve.
+        intro_sec = max(0.0, min(settings.get('intro_sec', 6.0), duration_sec - CARD_XFADE_SEC))
+
+        cmd = ['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error',
+               '-loop', '1', '-framerate', '30', '-i', cover_img_path]
+        if lower_img_path:
+            cmd += ['-loop', '1', '-framerate', '30', '-i', lower_img_path]
+        for clip in clips:
+            cmd += ['-i', clip]
+        cmd += ['-i', temp_wav_path]
+
+        audio_index = len(clips) + (2 if lower_img_path else 1)
+        video_filter = build_video_filter(len(clips), intro_sec, bool(lower_img_path))
+        filter_complex = f"{video_filter};[{audio_index}:a]apad[A]"
+
+        cmd += ['-filter_complex', filter_complex,
+                '-map', '[v]', '-map', '[A]',
+                # Real footage, so stillimage tuning no longer applies. veryfast
+                # keeps a 20-track party render to minutes rather than hours.
+                '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p',
+                '-c:a', 'aac', '-b:a', '256k',
+                '-ar', '44100', '-ac', '2',
+                '-t', str(duration_sec), output_mp4_path]
+    else:
+        cmd = ['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error',
+               '-loop', '1', '-framerate', '30', '-i', cover_img_path,
+               '-i', temp_wav_path,
+               '-filter_complex', '[1:a]apad[A]',
+               '-map', '0:v', '-map', '[A]',
+               '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p',
+               '-c:a', 'aac', '-b:a', '256k',
+               '-ar', '44100', '-ac', '2',
+               '-t', str(duration_sec), output_mp4_path]
+
     subprocess.run(cmd)
     os.remove(temp_wav_path)
 
@@ -809,6 +1041,9 @@ def main():
     if not library:
         print("No valid songs found.")
         return
+
+    # Dance footage is optional: any type without clips keeps the static cover.
+    video_pool = VideoPool(parse_video_pool(args.video_pool, all_dances)) if args.video_pool else None
 
     # --- 1. CALCULATE TARGETS ---
     print(f"Calculating quotas based on Config Weights...")
@@ -912,17 +1147,29 @@ def main():
             'fade_curve': args.fade_curve,
             'silence_ms': args.silence * 1000
         }
-        
+
         current_meta = extract_metadata(audio_filename)
         next_meta = None
         if i + 1 < len(master_playlist):
             next_song = master_playlist[i+1]
             next_filename = next_song['filename']
             next_meta = extract_metadata(next_filename)
-            
+
         temp_img_path = os.path.join(args.output, f"temp_cover_{seq_index}.png")
         generate_dynamic_cover(current_meta, next_meta, temp_img_path)
-        
+
+        # The lower third only earns its place once the card dissolves, so it is
+        # built only when this track actually gets dance footage behind it.
+        temp_lower_path = None
+        if video_pool and video_pool.has(dtype):
+            track_settings['video_pool'] = video_pool
+            track_settings['dance_type'] = dtype
+            track_settings['intro_sec'] = args.intro
+            if next_meta:
+                temp_lower_path = os.path.join(args.output, f"temp_lower_{seq_index}.png")
+                generate_lower_third(next_meta, temp_lower_path)
+                track_settings['lower_img_path'] = temp_lower_path
+
         mp3_out_path = None
         if args.mp3:
             # Use the same robust naming as MP4s, but change the extension
@@ -931,6 +1178,8 @@ def main():
             
         create_media(song['dir'], args.output, audio_filename, seq_index, temp_img_path, track_settings, mp3_out_path)
         os.remove(temp_img_path)
+        if temp_lower_path:
+            os.remove(temp_lower_path)
         
     print(f"\nDone! Videos located in: {args.output}")
     if args.mp3:
