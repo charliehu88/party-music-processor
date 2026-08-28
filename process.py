@@ -721,8 +721,9 @@ NEXT_LABEL_XY = (100, 470)
 NEXT_TYPE_XY = (100, 530)
 NEXT_NAME_XY = (100, 650)
 
-C_NEXT_LABEL = (255, 105, 180)  # Vibrant Hot Pink
+C_NEXT_LABEL = (255, 230, 0)    # Bright yellow for strong contrast over video
 C_NEXT_TYPE = (0, 255, 255)     # Pure Neon Cyan
+C_CURRENT_TYPE = (255, 215, 0)  # Gold, matching the full now-playing card
 C_SONG = (255, 255, 255)
 
 
@@ -746,7 +747,7 @@ def draw_coming_up_next(draw, next_meta, fonts, stroke_width=0):
     passes 0.
     """
     stroke = {'stroke_width': stroke_width, 'stroke_fill': (0, 0, 0)} if stroke_width else {}
-    draw.text(NEXT_LABEL_XY, "COMING UP NEXT:", font=fonts['m'], fill=C_NEXT_LABEL, **stroke)
+    draw.text(NEXT_LABEL_XY, "NEXT:", font=fonts['m'], fill=C_NEXT_LABEL, **stroke)
     draw.text(NEXT_TYPE_XY, next_meta['type'], font=fonts['xl'], fill=C_NEXT_TYPE, **stroke)
     draw.text(NEXT_NAME_XY, next_meta['name'], font=fonts['s'], fill=C_SONG, **stroke)
 
@@ -790,6 +791,10 @@ VIDEO_EXTENSIONS = (".mp4", ".mov", ".m4v", ".webm", ".mkv")
 # Seconds the text card takes to dissolve into the dance video, and the matching
 # fade-in of the lower third that replaces it.
 CARD_XFADE_SEC = 1.0
+
+# Maximum opacity of the dark lower-third scrim. Keep this translucent enough
+# that the dance footage remains clearly visible behind the upcoming-song text.
+LOWER_THIRD_MAX_ALPHA = 140
 
 # Clips shorter than this are noise (stray thumbnails, broken downloads) and
 # would need absurd repetition to fill a track.
@@ -880,32 +885,37 @@ class VideoPool:
         return chosen
 
 
-def generate_lower_third(next_meta, output_img_path):
+def generate_lower_third(current_meta, next_meta, output_img_path):
     """
-    Transparent overlay that keeps 'COMING UP NEXT' on screen once the full
-    text card has dissolved away.
+    Transparent overlay shown once the full text card has dissolved away.
 
-    The block is drawn at the same coordinates the card uses, so it does not
-    move during the dissolve - the now-playing half fades off and this half
-    appears to simply stay. Dance footage is bright and busy, so here the text
-    additionally gets a dark scrim behind it and a black outline; either alone
-    would lose against a spotlit white dress.
+    The current dance type remains in the upper-left without its song name.
+    When another song follows, the NEXT block stays at the card coordinates so
+    it does not move during the dissolve. Dance footage is bright and busy, so
+    all overlay text gets a black outline and the NEXT block gets a dark scrim.
     """
     W, H = COVER_W, COVER_H
     BAND_TOP = NEXT_DIVIDER_Y - 20
 
     img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
+    fonts = load_fonts()
 
-    # Scrim: ramps up over the first quarter of the band so there is no hard
-    # line cutting across the video, then holds solid under all of the text.
-    for y in range(BAND_TOP, H):
-        progress = (y - BAND_TOP) / (H - BAND_TOP)
-        alpha = int(235 * min(1.0, progress / 0.25))
-        draw.line([(0, y), (W, y)], fill=(8, 6, 20, alpha))
+    # Keep only the current dance type over the footage; the song name belongs
+    # to the intro card and would obscure too much of the moving background.
+    draw.text((100, 80), current_meta['type'], font=fonts['xl'],
+              fill=C_CURRENT_TYPE, stroke_width=4, stroke_fill=(0, 0, 0))
 
-    draw.line((50, NEXT_DIVIDER_Y, W - 50, NEXT_DIVIDER_Y), fill=(80, 80, 110), width=3)
-    draw_coming_up_next(draw, next_meta, load_fonts(), stroke_width=4)
+    if next_meta:
+        # Scrim: ramps up over the first quarter of the band so there is no hard
+        # line cutting across the video, then holds solid under all of the text.
+        for y in range(BAND_TOP, H):
+            progress = (y - BAND_TOP) / (H - BAND_TOP)
+            alpha = int(LOWER_THIRD_MAX_ALPHA * min(1.0, progress / 0.25))
+            draw.line([(0, y), (W, y)], fill=(8, 6, 20, alpha))
+
+        draw.line((50, NEXT_DIVIDER_Y, W - 50, NEXT_DIVIDER_Y), fill=(80, 80, 110), width=3)
+        draw_coming_up_next(draw, next_meta, fonts, stroke_width=4)
 
     img.save(output_img_path)
 
@@ -1165,10 +1175,9 @@ def main():
             track_settings['video_pool'] = video_pool
             track_settings['dance_type'] = dtype
             track_settings['intro_sec'] = args.intro
-            if next_meta:
-                temp_lower_path = os.path.join(args.output, f"temp_lower_{seq_index}.png")
-                generate_lower_third(next_meta, temp_lower_path)
-                track_settings['lower_img_path'] = temp_lower_path
+            temp_lower_path = os.path.join(args.output, f"temp_lower_{seq_index}.png")
+            generate_lower_third(current_meta, next_meta, temp_lower_path)
+            track_settings['lower_img_path'] = temp_lower_path
 
         mp3_out_path = None
         if args.mp3:
