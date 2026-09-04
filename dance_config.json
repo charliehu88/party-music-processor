@@ -60,6 +60,12 @@
       "length": 120,
       "category": "latin"
     },
+    "American Rumba": {
+      "weight": 2,
+      "tempo": "slow",
+      "length": 0,
+      "category": "social"
+    },
     "Hustle": {
       "weight": 4,
       "tempo": "quick",

@@ -67,7 +67,12 @@ def generate_merge_assets(input_folder):
     
     print(f"   Found {len(files)} clips to merge.")
 
-    chapter_desc = "Auto-generated Dance Playlist.\n\n⏱️ CHAPTERS:\n"
+    chapter_desc = (
+        "🤖 Made with my AI DJ tool — similar to Tesla FSD, but for the DJ booth.\n"
+        "Give it your specs; it picks the tracks and builds a ready-to-play set.\n"
+        "Subscribe for more: https://www.youtube.com/@charliehu88?sub_confirmation=1\n\n"
+        "⏱️ CHAPTERS:\n"
+    )
     current_seconds = 0.0
     
     with open(FFMPEG_LIST_FILE, "w") as f:
