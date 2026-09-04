@@ -721,6 +721,14 @@ NEXT_LABEL_XY = (100, 470)
 NEXT_TYPE_XY = (100, 530)
 NEXT_NAME_XY = (100, 650)
 
+# The current dance type over the footage. It is the only thing identifying the
+# dance once the card dissolves, so it is sized as large as the widest name
+# allows rather than borrowing a rung off the shared ladder.
+CURRENT_TYPE_XY = (100, 70)
+CURRENT_TYPE_MAX_SIZE = 190
+CURRENT_TYPE_MIN_SIZE = 110
+CURRENT_TYPE_MARGIN = 40
+
 C_NEXT_LABEL = (255, 230, 0)    # Bright yellow for strong contrast over video
 C_NEXT_TYPE = (0, 255, 255)     # Pure Neon Cyan
 C_CURRENT_TYPE = (255, 215, 0)  # Gold, matching the full now-playing card
@@ -736,6 +744,25 @@ def load_fonts():
         print("⚠️ Font not found! Falling back to default.")
         fallback = ImageFont.load_default()
         return {name: fallback for name in ('xxl', 'xl', 'l', 'm', 's')}
+
+
+def fit_font(text, max_size, min_size, max_width):
+    """
+    Largest font in [min_size, max_size] that keeps text inside max_width.
+
+    Dance names run from "Jive" to "Nightclub Two Step", so a single size is
+    either small for the short ones or off the edge for the long ones.
+    Returns min_size if even that overflows; clipping beats not rendering.
+    """
+    for size in range(max_size, min_size - 1, -2):
+        try:
+            font = ImageFont.truetype(FONT_PATH, size)
+        except IOError:
+            return ImageFont.load_default()
+        box = font.getbbox(text)
+        if box[2] - box[0] <= max_width:
+            return font
+    return font
 
 
 def draw_coming_up_next(draw, next_meta, fonts, stroke_width=0):
@@ -903,8 +930,10 @@ def generate_lower_third(current_meta, next_meta, output_img_path):
 
     # Keep only the current dance type over the footage; the song name belongs
     # to the intro card and would obscure too much of the moving background.
-    draw.text((100, 80), current_meta['type'], font=fonts['xl'],
-              fill=C_CURRENT_TYPE, stroke_width=4, stroke_fill=(0, 0, 0))
+    type_font = fit_font(current_meta['type'], CURRENT_TYPE_MAX_SIZE,
+                         CURRENT_TYPE_MIN_SIZE, W - CURRENT_TYPE_XY[0] - CURRENT_TYPE_MARGIN)
+    draw.text(CURRENT_TYPE_XY, current_meta['type'], font=type_font,
+              fill=C_CURRENT_TYPE, stroke_width=5, stroke_fill=(0, 0, 0))
 
     if next_meta:
         # Scrim: ramps up over the first quarter of the band so there is no hard
