@@ -84,7 +84,15 @@ def generate_merge_assets(input_folder):
             f.write(f"file '{safe_path}'\n")
             
             # 2. Format Timestamp
-            m, s = divmod(int(current_seconds), 60)
+            # Push the mark strictly inside the track it labels. YouTube pulls a
+            # chapter's thumbnail from at-or-just-before its timestamp, so a mark
+            # sitting exactly on the boundary grabs the previous song's last
+            # frame and the chapter shows the wrong dance card. Flooring is worse
+            # still when a track ends mid-second. Ceiling alone does not help
+            # here: these tracks are whole seconds, so it is a no-op on the very
+            # boundary it needs to clear. Hence floor + 1.
+            start = 0 if current_seconds == 0 else int(current_seconds) + 1
+            m, s = divmod(start, 60)
             h, m = divmod(m, 60)
             time_str = f"{h:02d}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
             
